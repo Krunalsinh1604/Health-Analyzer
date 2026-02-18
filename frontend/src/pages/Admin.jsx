@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import Navbar from "../components/Navbar";
 
 function AdminPage() {
   const { user, authFetch } = useAuth();
@@ -46,25 +47,11 @@ function AdminPage() {
 
   return (
     <div className="app">
-      <header className="topbar">
-        <div>
-          <p className="eyebrow">Clinical Intelligence Suite</p>
-          <h1>Admin Analytics</h1>
-          <p className="subtitle">
-            Welcome, {user?.full_name || "Admin"}. System Overview.
-          </p>
-        </div>
-        <div className="topbar-actions">
-          <NavLink to="/" className={({ isActive }) => `tab${isActive ? " active" : ""}`}>Home</NavLink>
-          <NavLink to="/diabetes" className={({ isActive }) => `tab${isActive ? " active" : ""}`}>Diabetes</NavLink>
-          <NavLink to="/cbc" className={({ isActive }) => `tab${isActive ? " active" : ""}`}>CBC</NavLink>
-          <NavLink to="/admin" className={({ isActive }) => `tab${isActive ? " active" : ""}`}>Admin</NavLink>
-        </div>
-      </header>
+      <Navbar />
 
       <section className="admin">
         <div className="admin-grid">
-          
+
           {/* Emergency Section */}
           <div className="card emergency-section" style={{ borderColor: '#ef4444' }}>
             <div className="card-header">
@@ -105,8 +92,8 @@ function AdminPage() {
                 <p>Comprehensive database of all assessments.</p>
               </div>
               <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                <select 
-                  value={filterRisk} 
+                <select
+                  value={filterRisk}
                   onChange={(e) => setFilterRisk(e.target.value)}
                   style={{ padding: '0.5rem' }}
                 >

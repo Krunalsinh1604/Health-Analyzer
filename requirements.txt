@@ -15,3 +15,5 @@ passlib[bcrypt]
 alembic
 sqlalchemy
 pymysql 
+pytesseract
+Pillow

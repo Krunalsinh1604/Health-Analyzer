@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
+import { toast } from "react-toastify";
+
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -14,9 +16,11 @@ function Login() {
     setError("");
     try {
       await login(email, password);
-      navigate("/");
+      toast.success("Welcome back!");
+      navigate("/dashboard");
     } catch (err) {
       setError("Invalid email or password");
+      toast.error("Invalid email or password");
     }
   };
 
@@ -25,9 +29,9 @@ function Login() {
       <div className="auth-card">
         <h2>Welcome Back</h2>
         <p>Login to access your health dashboard</p>
-        
+
         {error && <div className="error-message">{error}</div>}
-        
+
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label>Email</label>
@@ -38,7 +42,7 @@ function Login() {
               required
             />
           </div>
-          
+
           <div className="form-group">
             <label>Password</label>
             <input
@@ -48,10 +52,10 @@ function Login() {
               required
             />
           </div>
-          
+
           <button type="submit" className="auth-btn">Login</button>
         </form>
-        
+
         <p className="auth-link">
           Don't have an account? <Link to="/register">Register here</Link>
         </p>

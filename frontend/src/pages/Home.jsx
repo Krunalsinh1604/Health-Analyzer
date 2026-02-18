@@ -1,5 +1,6 @@
 import { NavLink, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import Navbar from "../components/Navbar";
 import medicalHero from "../assets/medical-hero.svg";
 
 function HomePage() {
@@ -7,26 +8,15 @@ function HomePage() {
 
   return (
     <div className="app">
-      <header className="topbar">
-        <div>
-          <p className="eyebrow">Clinical Intelligence Suite</p>
-          <h1>Health Analyzer</h1>
-        </div>
-        <div className="topbar-actions">
-          <NavLink to="/" className={({ isActive }) => `tab${isActive ? " active" : ""}`}>Home</NavLink>
-          {user?.role === "admin" && (
-            <NavLink to="/admin" className={({ isActive }) => `tab${isActive ? " active" : ""}`}>Admin Console</NavLink>
-          )}
-        </div>
-      </header>
+      <Navbar />
 
       <section className="hero-section">
         <div className="hero-content">
           <span className="hero-label">New v2.0 Release</span>
           <h1>Advanced Clinical Analytics & AI</h1>
           <p>
-            Empower your practice with real-time risk assessment. 
-            Analyze patient data for diabetes, heart disease, and hypertension with 
+            Empower your practice with real-time risk assessment.
+            Analyze patient data for diabetes, heart disease, and hypertension with
             our state-of-the-art machine learning models.
           </p>
           <div className="cta-group">
@@ -49,7 +39,7 @@ function HomePage() {
           <div className="icon-wrapper">🩸</div>
           <h3>Diabetes Prediction</h3>
           <p>
-            ML-driven risk scoring based on glucose, BMI, and insulin levels. 
+            ML-driven risk scoring based on glucose, BMI, and insulin levels.
             Includes PDF report extraction.
           </p>
           <span className="card-link">Launch Module</span>
@@ -69,7 +59,7 @@ function HomePage() {
           <div className="icon-wrapper">🫀</div>
           <h3>Heart Disease Risk</h3>
           <p>
-            Comprehensive cardiac risk assessment using age, cp, and metabolic 
+            Comprehensive cardiac risk assessment using age, cp, and metabolic
             indicators.
           </p>
           <span className="card-link">Launch Module</span>
@@ -79,7 +69,7 @@ function HomePage() {
           <div className="icon-wrapper">📄</div>
           <h3>CBC Analyzer</h3>
           <p>
-            Upload blood reports (PDF) to automatically extract and interpret 
+            Upload blood reports (PDF) to automatically extract and interpret
             Complete Blood Count parameters.
           </p>
           <span className="card-link">Launch Module</span>

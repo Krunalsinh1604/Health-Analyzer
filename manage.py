@@ -50,12 +50,17 @@ def main():
     parser_admin.add_argument("--password", required=True, help="Admin password")
     parser_admin.add_argument("--name", default="Admin", help="Admin full name")
 
+    # seed-db command
+    subparsers.add_parser("seed_db", help="Seed database with default admin")
+
     args = parser.parse_args()
 
     if args.command == "upgrade_db":
         upgrade_db()
     elif args.command == "create-admin":
         create_admin(args.email, args.password, args.name)
+    elif args.command == "seed_db":
+        create_admin("admin@gmail.com", "Admin@123", "Super Admin")
     else:
         parser.print_help()
 

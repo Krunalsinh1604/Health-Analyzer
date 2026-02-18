@@ -143,6 +143,34 @@ def extract_cbc_from_text(text: str) -> Dict[str, Dict[str, object]]:
     return data
 
 
+def process_manual_cbc(data: Dict[str, float]) -> Dict[str, Dict[str, object]]:
+    """
+    Process manually entered CBC data.
+    """
+    processed_data = {}
+
+    for name, value in data.items():
+        if value is None:
+            continue
+
+        meta = MEASUREMENTS.get(name)
+        if not meta:
+            continue
+
+        ref_range = meta.get("default_range")
+        unit = meta.get("unit")
+        status = _status_from_range(value, ref_range)
+
+        processed_data[name] = {
+            "value": value,
+            "unit": unit,
+            "range": ref_range,
+            "status": status,
+        }
+
+    return processed_data
+
+
 def interpret_cbc(cbc_data: Dict[str, Dict[str, object]]) -> Dict[str, object]:
     flags: List[str] = []
     conditions: List[str] = []

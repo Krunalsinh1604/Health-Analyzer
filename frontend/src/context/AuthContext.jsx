@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 
 const AuthContext = createContext();
@@ -31,13 +31,17 @@ export const AuthProvider = ({ children }) => {
         if (response.ok) {
           const userData = await response.json();
           setUser(userData);
-        } else {
+        } else if (response.status === 401 || response.status === 403) {
           // Token invalid or expired
+          console.warn("Session expired, logging out.");
           logout();
+        } else {
+          console.error("Server error fetching user:", response.status);
+          // Do NOT logout on 500 errors to prevent loops during transient failures
         }
       } catch (error) {
         console.error("Failed to fetch user:", error);
-        logout();
+        // Do NOT logout on network errors
       } finally {
         setLoading(false);
       }
@@ -46,7 +50,7 @@ export const AuthProvider = ({ children }) => {
     fetchUser();
   }, [token]);
 
-  const login = async (email, password) => {
+  const login = useCallback(async (email, password) => {
     const formData = new FormData();
     formData.append("username", email);
     formData.append("password", password);
@@ -63,13 +67,14 @@ export const AuthProvider = ({ children }) => {
 
     const data = await response.json();
     const accessToken = data.access_token;
-    
+
     localStorage.setItem("token", accessToken);
     setToken(accessToken);
+    setLoading(true); // Prevent race condition in ProtectedRoute
     return true;
-  };
+  }, []);
 
-  const register = async (email, password, fullName) => {
+  const register = useCallback(async (email, password, fullName) => {
     const response = await fetch(`${API_URL}/register`, {
       method: "POST",
       headers: {
@@ -89,21 +94,22 @@ export const AuthProvider = ({ children }) => {
 
     const data = await response.json();
     const accessToken = data.access_token;
-    
+
     // Auto login after register
     localStorage.setItem("token", accessToken);
     setToken(accessToken);
+    setLoading(true); // Prevent race condition in ProtectedRoute
     return true;
-  };
+  }, []);
 
-  const logout = () => {
+  const logout = useCallback(() => {
     localStorage.removeItem("token");
     setToken(null);
     setUser(null);
     navigate("/login");
-  };
+  }, [navigate]);
 
-  const authFetch = async (endpoint, options = {}) => {
+  const authFetch = useCallback(async (endpoint, options = {}) => {
     const headers = {
       ...options.headers,
       Authorization: `Bearer ${token}`,
@@ -120,7 +126,7 @@ export const AuthProvider = ({ children }) => {
     }
 
     return response;
-  };
+  }, [token, logout]);
 
   return (
     <AuthContext.Provider value={{ user, login, register, logout, loading, authFetch }}>
