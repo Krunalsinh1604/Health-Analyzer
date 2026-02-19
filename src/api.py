@@ -180,6 +180,149 @@ def predict(patient: PatientData):
         "recommended_specialists": specialists
     }
 
+# ---------------- HEART DISEASE PREDICTION ----------------
+
+class HeartData(BaseModel):
+    age: int
+    sex: int
+    cp: int
+    trestbps: int
+    chol: int
+    fbs: int
+    restecg: int
+    thalach: int
+    exang: int
+    oldpeak: float
+    slope: int
+    ca: int
+    thal: int
+
+@app.post("/predict/heart")
+def predict_heart(data: HeartData):
+    from src.ml_service import predict_heart_disease
+    prediction = predict_heart_disease(data.dict())
+    
+    result = "High Risk of Heart Disease" if prediction == 1 else "Low Risk"
+    return {"prediction": result, "raw": prediction}
+
+class HeartReportSave(HeartData):
+    prediction: str
+    probability: Optional[float] = None
+
+@app.post("/heart/save")
+async def save_heart_report(report: HeartReportSave, current_user=Depends(get_current_user)):
+    conn = get_db_connection()
+    if not conn:
+        raise HTTPException(status_code=500, detail="Database connection failed")
+    
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO heart_reports 
+            (user_id, age, sex, cp, trestbps, chol, fbs, restecg, thalach, exang, oldpeak, slope, ca, thal, prediction, probability)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """, (
+            current_user.user_id,
+            report.age, report.sex, report.cp, report.trestbps, report.chol, report.fbs, report.restecg, 
+            report.thalach, report.exang, report.oldpeak, report.slope, report.ca, report.thal,
+            report.prediction, report.probability
+        ))
+        conn.commit()
+        return {"status": "saved"}
+    except Exception as e:
+        print(f"Error saving heart report: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        if 'cursor' in locals(): cursor.close()
+        if 'conn' in locals(): conn.close()
+
+@app.get("/heart/history")
+async def get_heart_history(current_user=Depends(get_current_user)):
+    conn = get_db_connection()
+    if not conn:
+        raise HTTPException(status_code=500, detail="Database connection failed")
+    
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM heart_reports WHERE user_id = %s ORDER BY created_at DESC", (current_user.user_id,))
+        reports = cursor.fetchall()
+        return {"reports": reports}
+    except Exception as e:
+        print(f"Error fetching heart history: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        if 'cursor' in locals(): cursor.close()
+        if 'conn' in locals(): conn.close()
+
+# ---------------- HYPERTENSION PREDICTION ----------------
+
+class HypertensionData(BaseModel):
+    age: int
+    sex: int
+    bmi: float
+    heart_rate: int
+    activity_level: int
+    smoker: int
+    family_history: int
+
+@app.post("/predict/hypertension")
+def predict_htn(data: HypertensionData):
+    from src.ml_service import predict_hypertension
+    prediction = predict_hypertension(data.dict())
+    
+    result = "High Risk of Hypertension" if prediction == 1 else "Low Risk"
+    return {"prediction": result, "raw": prediction}
+
+class HypertensionReportSave(HypertensionData):
+    prediction: str
+
+@app.post("/hypertension/save")
+async def save_htn_report(report: HypertensionReportSave, current_user=Depends(get_current_user)):
+    conn = get_db_connection()
+    if not conn:
+        raise HTTPException(status_code=500, detail="Database connection failed")
+    
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO hypertension_reports 
+            (user_id, age, sex, bmi, heart_rate, activity_level, smoker, family_history, prediction)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """, (
+            current_user.user_id,
+            report.age, report.sex, report.bmi, report.heart_rate, 
+            report.activity_level, report.smoker, report.family_history,
+            report.prediction
+        ))
+        conn.commit()
+        return {"status": "saved"}
+    except Exception as e:
+        print(f"Error saving hypertension report: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        if 'cursor' in locals(): cursor.close()
+        if 'conn' in locals(): conn.close()
+
+@app.get("/hypertension/history")
+async def get_htn_history(current_user=Depends(get_current_user)):
+    conn = get_db_connection()
+    if not conn:
+        raise HTTPException(status_code=500, detail="Database connection failed")
+    
+    try:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM hypertension_reports WHERE user_id = %s ORDER BY created_at DESC", (current_user.user_id,))
+        reports = cursor.fetchall()
+        return {"reports": reports}
+    except Exception as e:
+        print(f"Error fetching hypertension history: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        if 'cursor' in locals(): cursor.close()
+        if 'conn' in locals(): conn.close()
+
+# ---------------- UPDATE CBC ANALYSIS ----------------
+
 # ---------------- SAVE REPORT ----------------
 
 @app.post("/reports/save")
@@ -370,8 +513,35 @@ async def analyze_manual_cbc(data: ManualCbcInput):
     
     # Process using the shared logic
     from src.cbc_analysis import process_manual_cbc, interpret_cbc
+    from src.ml_service import predict_cbc_condition
+    
     cbc_data = process_manual_cbc(input_data)
     interpretation = interpret_cbc(cbc_data)
+    
+    # ML Prediction
+    # We need to form a dict that matches the training data keys exactly
+    # Training keys: Hemoglobin, RBC, WBC, Platelets, MCV, MCH, RDW, Neutrophils, Lymphocytes, Monocytes, Eosinophils, Basophils
+    # We use 0.0 or mean values for missing optional fields to avoid crash if model expects them?
+    # For now, let's just pass what we have and hope pandas/sklearn handles it or we fillna
+    
+    # Prepare ML input with safe defaults for missing values (using normal means)
+    ml_input = {
+        'Hemoglobin': input_data.get('Hemoglobin', 14.0),
+        'RBC': input_data.get('RBC', 5.0),
+        'WBC': input_data.get('WBC', 7000),
+        'Platelets': input_data.get('Platelets', 250000),
+        'MCV': input_data.get('MCV', 90),
+        'MCH': input_data.get('MCH', 30),
+        'RDW': input_data.get('RDW', 13),
+        'Neutrophils': input_data.get('Neutrophils', 55),
+        'Lymphocytes': input_data.get('Lymphocytes', 30),
+        'Monocytes': input_data.get('Monocytes', 5),
+        'Eosinophils': input_data.get('Eosinophils', 3),
+        'Basophils': input_data.get('Basophils', 0.5)
+    }
+    
+    ml_prediction = predict_cbc_condition(ml_input)
+    interpretation['ml_prediction'] = ml_prediction
 
     return {"cbc": cbc_data, "interpretation": interpretation}
 

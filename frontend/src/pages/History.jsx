@@ -10,7 +10,18 @@ function History() {
 
     const [generalReports, setGeneralReports] = useState([]);
     const [cbcReports, setCbcReports] = useState([]);
+    const [heartReports, setHeartReports] = useState([]);
+    const [htnReports, setHtnReports] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [selectedReport, setSelectedReport] = useState(null);
+
+    const openModal = (report, type) => {
+        setSelectedReport({ ...report, type });
+    };
+
+    const closeModal = () => {
+        setSelectedReport(null);
+    };
 
     useEffect(() => {
         const fetchData = async () => {
@@ -28,6 +39,20 @@ function History() {
                 if (cbcRes.ok) {
                     const cbcData = await cbcRes.json();
                     setCbcReports(cbcData.reports || []);
+                }
+
+                // Fetch Heart Reports
+                const heartRes = await authFetch("/heart/history");
+                if (heartRes.ok) {
+                    const heartData = await heartRes.json();
+                    setHeartReports(heartData.reports || []);
+                }
+
+                // Fetch Hypertension Reports
+                const htnRes = await authFetch("/hypertension/history");
+                if (htnRes.ok) {
+                    const htnData = await htnRes.json();
+                    setHtnReports(htnData.reports || []);
                 }
 
             } catch (error) {
@@ -78,6 +103,18 @@ function History() {
                                         onClick={() => setActiveTab('cbc')}
                                     >
                                         CBC Analysis
+                                    </button>
+                                    <button
+                                        className={activeTab === 'heart' ? 'active' : ''}
+                                        onClick={() => setActiveTab('heart')}
+                                    >
+                                        Heart
+                                    </button>
+                                    <button
+                                        className={activeTab === 'hypertension' ? 'active' : ''}
+                                        onClick={() => setActiveTab('hypertension')}
+                                    >
+                                        Hypertension
                                     </button>
                                 </div>
                             </div>
@@ -192,7 +229,9 @@ function History() {
                                                                         {cbcReports.map(r => (
                                                                             <tr key={r.id}>
                                                                                 <td>{new Date(r.created_at).toLocaleDateString()} {new Date(r.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
-                                                                                <td>{r.source || 'Manual'}</td>
+                                                                                <td>
+                                                                                    {r.source || 'Manual'}
+                                                                                </td>
                                                                                 <td>
                                                                                     {/* Safe access to nested interpretation data */}
                                                                                     {r.interpretation?.summary ? (
@@ -202,8 +241,7 @@ function History() {
                                                                                     )}
                                                                                 </td>
                                                                                 <td>
-                                                                                    {/* Placeholder for future "View Details" */}
-                                                                                    <span className="text-muted" style={{ fontSize: '0.8em' }}>View Details</span>
+                                                                                    <button className="btn-link" onClick={() => openModal(r, 'cbc')}>View Details</button>
                                                                                 </td>
                                                                             </tr>
                                                                         ))}
@@ -215,6 +253,94 @@ function History() {
                                                 )}
                                             </>
                                         )}
+
+                                        {/* HEART REPORTS VIEW */}
+                                        {activeTab === 'heart' && (
+                                            <>
+                                                {heartReports.length === 0 ? (
+                                                    <p>No heart health reports found.</p>
+                                                ) : (
+                                                    <div className="table-wrap">
+                                                        <table>
+                                                            <thead>
+                                                                <tr>
+                                                                    <th>Date</th>
+                                                                    <th>Age</th>
+                                                                    <th>BP</th>
+                                                                    <th>Chol</th>
+                                                                    <th>Max HR</th>
+                                                                    <th>Prediction</th>
+                                                                    <th>Actions</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                {heartReports.map(r => (
+                                                                    <tr key={r.id}>
+                                                                        <td>{new Date(r.created_at).toLocaleDateString()} {new Date(r.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
+                                                                        <td>{r.age}</td>
+                                                                        <td>{r.trestbps}</td>
+                                                                        <td>{r.chol}</td>
+                                                                        <td>{r.thalach}</td>
+                                                                        <td>
+                                                                            <span className={`badge ${r.prediction?.includes('High') ? 'high' : 'low'}`}>
+                                                                                {r.prediction}
+                                                                            </span>
+                                                                        </td>
+                                                                        <td>
+                                                                            <button className="btn-link" onClick={() => openModal(r, 'heart')}>View Details</button>
+                                                                        </td>
+                                                                    </tr>
+                                                                ))}
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                )}
+                                            </>
+                                        )}
+
+                                        {/* HYPERTENSION REPORTS VIEW */}
+                                        {activeTab === 'hypertension' && (
+                                            <>
+                                                {htnReports.length === 0 ? (
+                                                    <p>No hypertension reports found.</p>
+                                                ) : (
+                                                    <div className="table-wrap">
+                                                        <table>
+                                                            <thead>
+                                                                <tr>
+                                                                    <th>Date</th>
+                                                                    <th>Age</th>
+                                                                    <th>BMI</th>
+                                                                    <th>BP Rating (HR)</th>
+                                                                    <th>Smoker</th>
+                                                                    <th>Prediction</th>
+                                                                    <th>Actions</th>
+                                                                </tr>
+                                                            </thead>
+                                                            <tbody>
+                                                                {htnReports.map(r => (
+                                                                    <tr key={r.id}>
+                                                                        <td>{new Date(r.created_at).toLocaleDateString()} {new Date(r.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</td>
+                                                                        <td>{r.age}</td>
+                                                                        <td>{r.bmi}</td>
+                                                                        <td>{r.heart_rate}</td>
+                                                                        <td>{r.smoker ? 'Yes' : 'No'}</td>
+                                                                        <td>
+                                                                            <span className={`badge ${r.prediction?.includes('High') ? 'high' : 'low'}`}>
+                                                                                {r.prediction}
+                                                                            </span>
+                                                                        </td>
+                                                                        <td>
+                                                                            <button className="btn-link" onClick={() => openModal(r, 'hypertension')}>View Details</button>
+                                                                        </td>
+                                                                    </tr>
+                                                                ))}
+                                                            </tbody>
+                                                        </table>
+                                                    </div>
+                                                )}
+                                            </>
+                                        )}
                                     </>
                                 )}
                             </div>
@@ -222,6 +348,85 @@ function History() {
                     </section>
                 </div>
             </main>
+
+            {/* DETAILS MODAL */}
+            {selectedReport && (
+                <div className="modal-overlay" onClick={closeModal}>
+                    <div className="modal-content" onClick={e => e.stopPropagation()}>
+                        <div className="modal-header">
+                            <h3>Report Details</h3>
+                            <button className="close-btn" onClick={closeModal}>&times;</button>
+                        </div>
+                        <div className="modal-body">
+                            {selectedReport.type === 'cbc' && (
+                                <div>
+                                    <h4>CBC Analysis</h4>
+                                    <p><strong>Date:</strong> {new Date(selectedReport.created_at).toLocaleString()}</p>
+                                    <p><strong>Source:</strong> {selectedReport.source}</p>
+
+                                    <div style={{ marginTop: '1rem' }}>
+                                        <h5>Key Findings</h5>
+                                        {selectedReport.interpretation?.abnormal_findings?.length > 0 ? (
+                                            <ul>
+                                                {selectedReport.interpretation.abnormal_findings.map((f, i) => (
+                                                    <li key={i}>{f}</li>
+                                                ))}
+                                            </ul>
+                                        ) : <p>No abnormal findings.</p>}
+                                    </div>
+
+                                    <div style={{ marginTop: '1rem' }}>
+                                        <h5>Full Summary</h5>
+                                        <p>{selectedReport.interpretation?.summary}</p>
+                                    </div>
+                                </div>
+                            )}
+
+                            {selectedReport.type === 'heart' && (
+                                <div>
+                                    <h4>Heart Disease Risk Assessment</h4>
+                                    <p><strong>Date:</strong> {new Date(selectedReport.created_at).toLocaleString()}</p>
+                                    <div className={`status-badge ${selectedReport.prediction?.includes('High') ? 'danger' : 'success'}`} style={{ fontSize: '1.2rem', margin: '1rem 0' }}>
+                                        {selectedReport.prediction}
+                                    </div>
+
+                                    <div className="grid-2">
+                                        <div><strong>Age:</strong> {selectedReport.age}</div>
+                                        <div><strong>Sex:</strong> {selectedReport.sex === 1 ? 'Male' : 'Female'}</div>
+                                        <div><strong>BP:</strong> {selectedReport.trestbps} mmHg</div>
+                                        <div><strong>Cholesterol:</strong> {selectedReport.chol} mg/dl</div>
+                                        <div><strong>Max HR:</strong> {selectedReport.thalach} BPM</div>
+                                        <div><strong>Chest Pain:</strong> Type {selectedReport.cp}</div>
+                                    </div>
+                                </div>
+                            )}
+
+                            {selectedReport.type === 'hypertension' && (
+                                <div>
+                                    <h4>Hypertension Risk Profile</h4>
+                                    <p><strong>Date:</strong> {new Date(selectedReport.created_at).toLocaleString()}</p>
+                                    <div className={`status-badge ${selectedReport.prediction?.includes('High') ? 'danger' : 'success'}`} style={{ fontSize: '1.2rem', margin: '1rem 0' }}>
+                                        {selectedReport.prediction}
+                                    </div>
+
+                                    <div className="grid-2">
+                                        <div><strong>Age:</strong> {selectedReport.age}</div>
+                                        <div><strong>Sex:</strong> {selectedReport.sex === 1 ? 'Male' : 'Female'}</div>
+                                        <div><strong>BMI:</strong> {selectedReport.bmi}</div>
+                                        <div><strong>Heart Rate:</strong> {selectedReport.heart_rate} BPM</div>
+                                        <div><strong>Smoker:</strong> {selectedReport.smoker ? 'Yes' : 'No'}</div>
+                                        <div><strong>Family History:</strong> {selectedReport.family_history ? 'Yes' : 'No'}</div>
+                                        <div><strong>Activity:</strong> {['Sedentary', 'Moderate', 'Active'][selectedReport.activity_level]}</div>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                        <div className="modal-footer">
+                            <button className="btn-secondary" onClick={closeModal}>Close</button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

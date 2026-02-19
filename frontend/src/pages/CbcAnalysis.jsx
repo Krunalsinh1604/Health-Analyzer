@@ -436,6 +436,13 @@ function CbcAnalysisPage() {
                     </div>
                   </div>
                 )}
+
+                {cbcInterpretation.ml_prediction && (
+                  <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid var(--border)' }}>
+                    <h4 style={{ fontSize: '1rem', color: 'var(--muted)', marginBottom: '8px' }}>AI Model Classification</h4>
+                    <strong style={{ fontSize: '1.2rem', color: 'var(--primary)' }}>{cbcInterpretation.ml_prediction}</strong>
+                  </div>
+                )}
                 {cbcInterpretation.note && (
                   <p className="note-text" style={{ marginTop: '20px', fontStyle: 'italic', color: 'var(--muted)', fontSize: '1rem' }}>{cbcInterpretation.note}</p>
                 )}

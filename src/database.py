@@ -146,6 +146,61 @@ def init_db():
         """)
         print("Table 'cbc_reports' checked/created.")
 
+        # HEART REPORTS TABLE
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS heart_reports (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+                age INT,
+                sex INT,
+                cp INT,
+                trestbps INT,
+                chol INT,
+                fbs INT,
+                restecg INT,
+                thalach INT,
+                exang INT,
+                oldpeak FLOAT,
+                slope INT,
+                ca INT,
+                thal INT,
+
+                prediction VARCHAR(64),
+                probability FLOAT,
+
+                FOREIGN KEY (user_id)
+                    REFERENCES users(id)
+                    ON DELETE SET NULL
+            )
+        """)
+        print("Table 'heart_reports' checked/created.")
+
+        # HYPERTENSION REPORTS TABLE
+        cursor.execute("""
+            CREATE TABLE IF NOT EXISTS hypertension_reports (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                user_id INT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+                age INT,
+                sex INT,
+                bmi FLOAT,
+                heart_rate INT,
+                activity_level INT,
+                smoker INT,
+                family_history INT,
+
+                prediction VARCHAR(64),
+                
+                FOREIGN KEY (user_id)
+                    REFERENCES users(id)
+                    ON DELETE SET NULL
+            )
+        """)
+        print("Table 'hypertension_reports' checked/created.")
+
         conn.commit()
         conn.close()
 
