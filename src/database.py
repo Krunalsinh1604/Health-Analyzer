@@ -4,6 +4,18 @@ from mysql.connector import Error
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
+
+def _column_exists(cursor, table_name, column_name):
+    cursor.execute(
+        """
+        SELECT COUNT(*)
+        FROM INFORMATION_SCHEMA.COLUMNS
+        WHERE TABLE_SCHEMA = %s AND TABLE_NAME = %s AND COLUMN_NAME = %s
+        """,
+        (DB_NAME, table_name, column_name),
+    )
+    return cursor.fetchone()[0] > 0
+
 # =========================
 # Database Configuration
 # =========================
@@ -84,15 +96,53 @@ def init_db():
             CREATE TABLE IF NOT EXISTS users (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 email VARCHAR(255) UNIQUE NOT NULL,
+                mobile_no VARCHAR(20) UNIQUE NOT NULL,
                 password_hash VARCHAR(255) NOT NULL,
                 full_name VARCHAR(255) NOT NULL,
                 role ENUM('user', 'admin') DEFAULT 'user',
+                email_verified TINYINT(1) DEFAULT 1,
+                mobile_verified TINYINT(1) DEFAULT 1,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                     ON UPDATE CURRENT_TIMESTAMP
             )
         """)
         print("Table 'users' checked/created.")
+
+        if not _column_exists(cursor, "users", "mobile_no"):
+            cursor.execute("ALTER TABLE users ADD COLUMN mobile_no VARCHAR(20) UNIQUE NULL")
+
+        if not _column_exists(cursor, "users", "email_verified"):
+            cursor.execute("ALTER TABLE users ADD COLUMN email_verified TINYINT(1) DEFAULT 1")
+
+        if not _column_exists(cursor, "users", "mobile_verified"):
+            cursor.execute("ALTER TABLE users ADD COLUMN mobile_verified TINYINT(1) DEFAULT 1")
+
+        cursor.execute(
+            """
+            UPDATE users
+            SET
+                mobile_no = COALESCE(NULLIF(mobile_no, ''), CONCAT('LEGACY_', id)),
+                email_verified = COALESCE(email_verified, 1),
+                mobile_verified = COALESCE(mobile_verified, 1)
+            """
+        )
+
+        cursor.execute(
+            """
+            CREATE TABLE IF NOT EXISTS verification_codes (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                target_type ENUM('email', 'mobile') NOT NULL,
+                target_value VARCHAR(255) NOT NULL,
+                code VARCHAR(6) NOT NULL,
+                is_verified TINYINT(1) DEFAULT 0,
+                expires_at DATETIME NOT NULL,
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                UNIQUE KEY uq_target_type_value (target_type, target_value)
+            )
+            """
+        )
+        print("Table 'verification_codes' checked/created.")
 
         # PATIENT REPORTS TABLE
         cursor.execute("""

@@ -2,11 +2,16 @@ from fastapi import FastAPI, UploadFile, File, Depends, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, List
 import os
 import shutil
 import json
 from datetime import timedelta
+from datetime import datetime
+import random
+import re
+import smtplib
+from email.message import EmailMessage
 
 # ---------------- IMPORT INTERNAL MODULES ----------------
 
@@ -39,9 +44,24 @@ app = FastAPI(
 
 # ---------------- CORS ----------------
 
+def _get_allowed_origins() -> List[str]:
+    default_origins = [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:5174",
+        "http://127.0.0.1:5174",
+    ]
+    extra_origins = [
+        origin.strip()
+        for origin in os.getenv("CORS_ALLOW_ORIGINS", "").split(",")
+        if origin.strip()
+    ]
+
+    return list(dict.fromkeys(default_origins + extra_origins))
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=_get_allowed_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -62,8 +82,37 @@ class PatientData(BaseModel):
 
 class UserCreate(BaseModel):
     email: str
+    mobile_no: str
     password: str
     full_name: str
+
+
+class EmailVerificationRequest(BaseModel):
+    email: str
+
+
+class EmailVerificationConfirm(BaseModel):
+    email: str
+    otp: str
+
+
+class MobileVerificationRequest(BaseModel):
+    mobile_no: str
+
+
+class MobileVerificationConfirm(BaseModel):
+    mobile_no: str
+    otp: str
+
+
+class LoginOtpRequest(BaseModel):
+    email: str
+
+
+class PasswordResetConfirm(BaseModel):
+    email: str
+    otp: str
+    new_password: str
 
 
 class ReportSave(BaseModel):
@@ -71,28 +120,288 @@ class ReportSave(BaseModel):
     outputs: dict
     source: str = "manual"
 
+
+def _is_valid_email(email: str) -> bool:
+    return re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", email) is not None
+
+
+def _normalize_mobile(mobile_no: str) -> str:
+    return re.sub(r"\D", "", mobile_no or "")
+
+
+def _is_valid_mobile(mobile_no: str) -> bool:
+    normalized = _normalize_mobile(mobile_no)
+    return 10 <= len(normalized) <= 15
+
+
+def _generate_otp() -> str:
+    return f"{random.randint(0, 999999):06d}"
+
+
+def _send_email_otp(email: str, otp: str):
+    smtp_host = os.getenv("SMTP_HOST")
+    smtp_port = int(os.getenv("SMTP_PORT", "587"))
+    smtp_user = os.getenv("SMTP_USER")
+    smtp_pass = os.getenv("SMTP_PASS")
+    smtp_from = os.getenv("SMTP_FROM", smtp_user or "no-reply@health-analyzer.local")
+
+    if not smtp_host or not smtp_user or not smtp_pass:
+        print(f"[EMAIL OTP] {email}: {otp}")
+        return
+
+    msg = EmailMessage()
+    msg["Subject"] = "Health Analyzer Email Verification OTP"
+    msg["From"] = smtp_from
+    msg["To"] = email
+    msg.set_content(f"Your verification OTP is: {otp}. It expires in 10 minutes.")
+
+    with smtplib.SMTP(smtp_host, smtp_port) as server:
+        server.starttls()
+        server.login(smtp_user, smtp_pass)
+        server.send_message(msg)
+
+
+def _send_mobile_otp(mobile_no: str, otp: str):
+    # Integrate SMS provider (Twilio/Fast2SMS/etc.) here in production.
+    print(f"[SMS OTP] {mobile_no}: {otp}")
+
+
+def _upsert_verification_code(target_type: str, target_value: str, otp: str):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    cursor.execute(
+        """
+        INSERT INTO verification_codes (target_type, target_value, code, is_verified, expires_at)
+        VALUES (%s, %s, %s, 0, DATE_ADD(NOW(), INTERVAL 10 MINUTE))
+        ON DUPLICATE KEY UPDATE
+            code = VALUES(code),
+            is_verified = 0,
+            expires_at = VALUES(expires_at)
+        """,
+        (target_type, target_value, otp),
+    )
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+
+def _confirm_verification_code(target_type: str, target_value: str, otp: str):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute(
+        """
+        SELECT id, code, expires_at
+        FROM verification_codes
+        WHERE target_type = %s AND target_value = %s
+        """,
+        (target_type, target_value),
+    )
+    record = cursor.fetchone()
+
+    if not record:
+        cursor.close()
+        conn.close()
+        raise HTTPException(status_code=400, detail="Verification code not requested")
+
+    if datetime.now() > record["expires_at"]:
+        cursor.close()
+        conn.close()
+        raise HTTPException(status_code=400, detail="Verification code expired")
+
+    if record["code"] != otp:
+        cursor.close()
+        conn.close()
+        raise HTTPException(status_code=400, detail="Invalid verification code")
+
+    cursor.execute(
+        """
+        UPDATE verification_codes
+        SET is_verified = 1
+        WHERE id = %s
+        """,
+        (record["id"],),
+    )
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+
+def _ensure_target_verified(target_type: str, target_value: str):
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute(
+        """
+        SELECT is_verified, expires_at
+        FROM verification_codes
+        WHERE target_type = %s AND target_value = %s
+        """,
+        (target_type, target_value),
+    )
+    record = cursor.fetchone()
+    cursor.close()
+    conn.close()
+
+    if not record or not record["is_verified"]:
+        raise HTTPException(status_code=400, detail=f"{target_type.capitalize()} is not verified")
+
+    if datetime.now() > record["expires_at"]:
+        raise HTTPException(status_code=400, detail=f"{target_type.capitalize()} verification expired")
+
 # ---------------- AUTH ROUTES ----------------
+
+@app.post("/verify/email/request")
+async def request_email_verification(payload: EmailVerificationRequest):
+    email = (payload.email or "").strip().lower()
+    if not _is_valid_email(email):
+        raise HTTPException(status_code=400, detail="Invalid email format")
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT id FROM users WHERE email = %s", (email,))
+    if cursor.fetchone():
+        cursor.close()
+        conn.close()
+        raise HTTPException(status_code=400, detail="Email already registered")
+    cursor.close()
+    conn.close()
+
+    otp = _generate_otp()
+    _upsert_verification_code("email", email, otp)
+    _send_email_otp(email, otp)
+    return {"message": "Email verification code sent"}
+
+
+@app.post("/verify/email/confirm")
+async def confirm_email_verification(payload: EmailVerificationConfirm):
+    email = (payload.email or "").strip().lower()
+    _confirm_verification_code("email", email, payload.otp.strip())
+    return {"message": "Email verified successfully"}
+
+
+@app.post("/password/forgot/request")
+async def request_password_reset_otp(payload: LoginOtpRequest):
+    email = (payload.email or "").strip().lower()
+    if not _is_valid_email(email):
+        raise HTTPException(status_code=400, detail="Invalid email format")
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT id FROM users WHERE email = %s", (email,))
+    user = cursor.fetchone()
+    cursor.close()
+    conn.close()
+
+    if not user:
+        raise HTTPException(status_code=404, detail="User with this email does not exist")
+
+    otp = _generate_otp()
+    _upsert_verification_code("email", email, otp)
+    _send_email_otp(email, otp)
+    return {"message": "Password reset OTP sent to email"}
+
+
+@app.post("/password/forgot/reset")
+async def reset_password_with_otp(payload: PasswordResetConfirm):
+    email = (payload.email or "").strip().lower()
+    if not _is_valid_email(email):
+        raise HTTPException(status_code=400, detail="Invalid email format")
+
+    if len((payload.new_password or "").strip()) < 6:
+        raise HTTPException(status_code=400, detail="New password must be at least 6 characters")
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
+    user = cursor.fetchone()
+
+    if not user:
+        cursor.close()
+        conn.close()
+        raise HTTPException(status_code=404, detail="User with this email does not exist")
+
+    _confirm_verification_code("email", email, payload.otp.strip())
+
+    new_password_hash = get_password_hash(payload.new_password.strip())
+    cursor.execute(
+        "UPDATE users SET password_hash = %s WHERE id = %s",
+        (new_password_hash, user["id"]),
+    )
+
+    cursor.execute(
+        "DELETE FROM verification_codes WHERE target_type = 'email' AND target_value = %s",
+        (email,),
+    )
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    return {"message": "Password reset successful"}
+
+
+@app.post("/verify/mobile/request")
+async def request_mobile_verification(payload: MobileVerificationRequest):
+    mobile_no = _normalize_mobile(payload.mobile_no)
+    if not _is_valid_mobile(mobile_no):
+        raise HTTPException(status_code=400, detail="Invalid mobile number")
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+    cursor.execute("SELECT id FROM users WHERE mobile_no = %s", (mobile_no,))
+    if cursor.fetchone():
+        cursor.close()
+        conn.close()
+        raise HTTPException(status_code=400, detail="Mobile number already registered")
+    cursor.close()
+    conn.close()
+
+    otp = _generate_otp()
+    _upsert_verification_code("mobile", mobile_no, otp)
+    _send_mobile_otp(mobile_no, otp)
+    return {"message": "Mobile verification code sent"}
+
+
+@app.post("/verify/mobile/confirm")
+async def confirm_mobile_verification(payload: MobileVerificationConfirm):
+    mobile_no = _normalize_mobile(payload.mobile_no)
+    _confirm_verification_code("mobile", mobile_no, payload.otp.strip())
+    return {"message": "Mobile verified successfully"}
 
 @app.post("/register", response_model=Token)
 async def register(user: UserCreate):
+    email = (user.email or "").strip().lower()
+    mobile_no = _normalize_mobile(user.mobile_no)
+
+    if not _is_valid_email(email):
+        raise HTTPException(status_code=400, detail="Invalid email format")
+
+    if not _is_valid_mobile(mobile_no):
+        raise HTTPException(status_code=400, detail="Valid mobile number is required")
+
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
 
-    cursor.execute("SELECT id FROM users WHERE email = %s", (user.email,))
+    cursor.execute("SELECT id FROM users WHERE email = %s", (email,))
     if cursor.fetchone():
         raise HTTPException(status_code=400, detail="Email already registered")
+
+    cursor.execute("SELECT id FROM users WHERE mobile_no = %s", (mobile_no,))
+    if cursor.fetchone():
+        raise HTTPException(status_code=400, detail="Mobile number already registered")
 
     hashed_password = get_password_hash(user.password)
 
     cursor.execute(
-        "INSERT INTO users (email, password_hash, full_name, role) VALUES (%s, %s, %s, 'user')",
-        (user.email, hashed_password, user.full_name)
+        """
+        INSERT INTO users (email, mobile_no, password_hash, full_name, role, email_verified, mobile_verified)
+        VALUES (%s, %s, %s, %s, 'user', 1, 1)
+        """,
+        (email, mobile_no, hashed_password, user.full_name)
     )
     conn.commit()
     user_id = cursor.lastrowid
 
     access_token = create_access_token(
-        data={"sub": user.email, "user_id": user_id, "role": "user"},
+        data={"sub": email, "user_id": user_id, "role": "user"},
         expires_delta=timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     )
 
@@ -104,10 +413,17 @@ async def register(user: UserCreate):
 
 @app.post("/token", response_model=Token)
 async def login(form_data: OAuth2PasswordRequestForm = Depends()):
+    login_id_raw = (form_data.username or "").strip()
+    login_id_email = login_id_raw.lower()
+    login_id_mobile = _normalize_mobile(login_id_raw)
+
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
 
-    cursor.execute("SELECT * FROM users WHERE email = %s", (form_data.username,))
+    cursor.execute(
+        "SELECT * FROM users WHERE email = %s OR mobile_no = %s",
+        (login_id_email, login_id_mobile),
+    )
     user = cursor.fetchone()
 
     if not user or not verify_password(form_data.password, user["password_hash"]):

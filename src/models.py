@@ -11,9 +11,12 @@ class User(Base):
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     email = Column(String(255), unique=True, nullable=False)
+    mobile_no = Column(String(20), unique=True, nullable=False)
     password_hash = Column(String(255), nullable=False)
     full_name = Column(String(255), nullable=False)
     role = Column(Enum('user', 'admin'), default='user')
+    email_verified = Column(Integer, default=1)
+    mobile_verified = Column(Integer, default=1)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
@@ -61,3 +64,15 @@ class CbcReport(Base):
     source = Column(String(32), nullable=True)
 
     user = relationship("User", back_populates="cbc_reports")
+
+
+class VerificationCode(Base):
+    __tablename__ = "verification_codes"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    target_type = Column(Enum('email', 'mobile'), nullable=False)
+    target_value = Column(String(255), nullable=False)
+    code = Column(String(6), nullable=False)
+    is_verified = Column(Integer, default=0)
+    expires_at = Column(DateTime, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())

@@ -1,6 +1,7 @@
 import { NavLink, Link } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import Navbar from "../components/Navbar";
+import Footer from "../components/Footer";
 import medicalHero from "../assets/medical-hero.svg";
 
 function HomePage() {
@@ -75,6 +76,8 @@ function HomePage() {
           <span className="card-link">Launch Module</span>
         </Link>
       </section>
+
+      <Footer />
     </div>
   );
 }

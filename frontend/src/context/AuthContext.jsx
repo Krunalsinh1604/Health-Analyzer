@@ -50,9 +50,9 @@ export const AuthProvider = ({ children }) => {
     fetchUser();
   }, [token]);
 
-  const login = useCallback(async (email, password) => {
+  const login = useCallback(async (loginId, password) => {
     const formData = new FormData();
-    formData.append("username", email);
+    formData.append("username", loginId);
     formData.append("password", password);
 
     const response = await fetch(`${API_URL}/token`, {
@@ -74,7 +74,41 @@ export const AuthProvider = ({ children }) => {
     return true;
   }, []);
 
-  const register = useCallback(async (email, password, fullName) => {
+  const requestPasswordResetOtp = useCallback(async (email) => {
+    const response = await fetch(`${API_URL}/password/forgot/request`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email }),
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.detail || "Failed to send login OTP");
+    }
+
+    return data;
+  }, []);
+
+  const resetPasswordWithOtp = useCallback(async (email, otp, newPassword) => {
+    const response = await fetch(`${API_URL}/password/forgot/reset`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email, otp, new_password: newPassword }),
+    });
+
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.detail || "Password reset failed");
+    }
+
+    return data;
+  }, []);
+
+  const register = useCallback(async (email, password, fullName, mobileNo) => {
     const response = await fetch(`${API_URL}/register`, {
       method: "POST",
       headers: {
@@ -82,6 +116,7 @@ export const AuthProvider = ({ children }) => {
       },
       body: JSON.stringify({
         email,
+        mobile_no: mobileNo,
         password,
         full_name: fullName,
       }),
@@ -129,7 +164,7 @@ export const AuthProvider = ({ children }) => {
   }, [token, logout]);
 
   return (
-    <AuthContext.Provider value={{ user, login, register, logout, loading, authFetch }}>
+    <AuthContext.Provider value={{ user, login, requestPasswordResetOtp, resetPasswordWithOtp, register, logout, loading, authFetch }}>
       {children}
     </AuthContext.Provider>
   );

@@ -4,6 +4,7 @@ import heroHand from "../assets/hero-hand.png";
 import heartEcg from "../assets/heart-ecg.png";
 import beHealthy from "../assets/be-healthy.png";
 import medicalIcons from "../assets/medical-icons.png"; // Assuming the blue icons image
+import Footer from "../components/Footer";
 
 const LandingPage = () => {
   return (
@@ -91,6 +92,8 @@ const LandingPage = () => {
           </div>
         </section>
       </main>
+
+      <Footer />
 
       <style>{`
         :root {
