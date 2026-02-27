@@ -1,7 +1,10 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext'; // Import useAuth
 
 const Footer = () => {
+    const { user } = useAuth(); // Get user from context
+
     return (
         <footer className="site-footer">
             <div className="footer-content">
@@ -11,11 +14,22 @@ const Footer = () => {
                 </div>
                 <div className="footer-section">
                     <h4>Quick Links</h4>
-                    <ul>
-                        <li><Link to="/">Home</Link></li>
-                        <li><Link to="/login">Login</Link></li>
-                        <li><Link to="/register">Register</Link></li>
-                    </ul>
+                    {user ? (
+                        <ul>
+                            <li><Link to="/dashboard">Dashboard</Link></li>
+                            <li><Link to="/history">My History</Link></li>
+                            <li><Link to="/diabetes">Diabetes Analysis</Link></li>
+                            <li><Link to="/cbc">CBC Analyzer</Link></li>
+                            <li><Link to="/hypertension">Hypertension Monitor</Link></li>
+                            <li><Link to="/heart-disease">Heart Disease Risk</Link></li>
+                        </ul>
+                    ) : (
+                        <ul>
+                            <li><Link to="/">Home</Link></li>
+                            <li><Link to="/login">Login</Link></li>
+                            <li><Link to="/register">Register</Link></li>
+                        </ul>
+                    )}
                 </div>
                 <div className="footer-section">
                     <h4>Legal</h4>

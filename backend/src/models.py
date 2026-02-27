@@ -30,7 +30,6 @@ class PatientReport(Base):
     user_id = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     
-    pregnancies = Column(Integer, nullable=True)
     glucose = Column(Float(precision=2), nullable=True)
     blood_pressure = Column(Float(precision=2), nullable=True)
     skin_thickness = Column(Float(precision=2), nullable=True)

@@ -34,6 +34,21 @@ function Login() {
     try {
       await login(loginId, password);
       toast.success("Welcome back!");
+
+      // Decode JWT to find role for routing
+      const token = localStorage.getItem("token");
+      if (token) {
+        try {
+          const payload = JSON.parse(atob(token.split(".")[1]));
+          if (payload.role === "admin") {
+            navigate("/admin");
+            return;
+          }
+        } catch (e) {
+          console.error("Failed to parse token payload", e);
+        }
+      }
+
       navigate("/dashboard");
     } catch (err) {
       setError(err.message || "Invalid credentials");

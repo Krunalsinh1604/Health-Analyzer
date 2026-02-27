@@ -4,6 +4,9 @@ import numpy as np
 # Load raw dataset
 df = pd.read_csv('data/raw/diabetes.csv')
 
+if 'Pregnancies' in df.columns:
+    df = df.drop('Pregnancies', axis=1)
+
 # Columns where zero is not a valid value
 invalid_zero_cols = ['Glucose', 'BloodPressure', 'SkinThickness', 'Insulin', 'BMI']
 

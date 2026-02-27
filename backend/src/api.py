@@ -70,7 +70,6 @@ app.add_middleware(
 # ---------------- DATA MODELS ----------------
 
 class PatientData(BaseModel):
-    Pregnancies: int
     Glucose: int
     BloodPressure: int
     SkinThickness: int
@@ -85,34 +84,6 @@ class UserCreate(BaseModel):
     mobile_no: str
     password: str
     full_name: str
-
-
-class EmailVerificationRequest(BaseModel):
-    email: str
-
-
-class EmailVerificationConfirm(BaseModel):
-    email: str
-    otp: str
-
-
-class MobileVerificationRequest(BaseModel):
-    mobile_no: str
-
-
-class MobileVerificationConfirm(BaseModel):
-    mobile_no: str
-    otp: str
-
-
-class LoginOtpRequest(BaseModel):
-    email: str
-
-
-class PasswordResetConfirm(BaseModel):
-    email: str
-    otp: str
-    new_password: str
 
 
 class ReportSave(BaseModel):
@@ -134,237 +105,7 @@ def _is_valid_mobile(mobile_no: str) -> bool:
     return 10 <= len(normalized) <= 15
 
 
-def _generate_otp() -> str:
-    return f"{random.randint(0, 999999):06d}"
-
-
-def _send_email_otp(email: str, otp: str):
-    smtp_host = os.getenv("SMTP_HOST")
-    smtp_port = int(os.getenv("SMTP_PORT", "587"))
-    smtp_user = os.getenv("SMTP_USER")
-    smtp_pass = os.getenv("SMTP_PASS")
-    smtp_from = os.getenv("SMTP_FROM", smtp_user or "no-reply@health-analyzer.local")
-
-    if not smtp_host or not smtp_user or not smtp_pass:
-        print(f"[EMAIL OTP] {email}: {otp}")
-        return
-
-    msg = EmailMessage()
-    msg["Subject"] = "Health Analyzer Email Verification OTP"
-    msg["From"] = smtp_from
-    msg["To"] = email
-    msg.set_content(f"Your verification OTP is: {otp}. It expires in 10 minutes.")
-
-    with smtplib.SMTP(smtp_host, smtp_port) as server:
-        server.starttls()
-        server.login(smtp_user, smtp_pass)
-        server.send_message(msg)
-
-
-def _send_mobile_otp(mobile_no: str, otp: str):
-    # Integrate SMS provider (Twilio/Fast2SMS/etc.) here in production.
-    print(f"[SMS OTP] {mobile_no}: {otp}")
-
-
-def _upsert_verification_code(target_type: str, target_value: str, otp: str):
-    conn = get_db_connection()
-    cursor = conn.cursor()
-    cursor.execute(
-        """
-        INSERT INTO verification_codes (target_type, target_value, code, is_verified, expires_at)
-        VALUES (%s, %s, %s, 0, DATE_ADD(NOW(), INTERVAL 10 MINUTE))
-        ON DUPLICATE KEY UPDATE
-            code = VALUES(code),
-            is_verified = 0,
-            expires_at = VALUES(expires_at)
-        """,
-        (target_type, target_value, otp),
-    )
-    conn.commit()
-    cursor.close()
-    conn.close()
-
-
-def _confirm_verification_code(target_type: str, target_value: str, otp: str):
-    conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute(
-        """
-        SELECT id, code, expires_at
-        FROM verification_codes
-        WHERE target_type = %s AND target_value = %s
-        """,
-        (target_type, target_value),
-    )
-    record = cursor.fetchone()
-
-    if not record:
-        cursor.close()
-        conn.close()
-        raise HTTPException(status_code=400, detail="Verification code not requested")
-
-    if datetime.now() > record["expires_at"]:
-        cursor.close()
-        conn.close()
-        raise HTTPException(status_code=400, detail="Verification code expired")
-
-    if record["code"] != otp:
-        cursor.close()
-        conn.close()
-        raise HTTPException(status_code=400, detail="Invalid verification code")
-
-    cursor.execute(
-        """
-        UPDATE verification_codes
-        SET is_verified = 1
-        WHERE id = %s
-        """,
-        (record["id"],),
-    )
-    conn.commit()
-    cursor.close()
-    conn.close()
-
-
-def _ensure_target_verified(target_type: str, target_value: str):
-    conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute(
-        """
-        SELECT is_verified, expires_at
-        FROM verification_codes
-        WHERE target_type = %s AND target_value = %s
-        """,
-        (target_type, target_value),
-    )
-    record = cursor.fetchone()
-    cursor.close()
-    conn.close()
-
-    if not record or not record["is_verified"]:
-        raise HTTPException(status_code=400, detail=f"{target_type.capitalize()} is not verified")
-
-    if datetime.now() > record["expires_at"]:
-        raise HTTPException(status_code=400, detail=f"{target_type.capitalize()} verification expired")
-
 # ---------------- AUTH ROUTES ----------------
-
-@app.post("/verify/email/request")
-async def request_email_verification(payload: EmailVerificationRequest):
-    email = (payload.email or "").strip().lower()
-    if not _is_valid_email(email):
-        raise HTTPException(status_code=400, detail="Invalid email format")
-
-    conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT id FROM users WHERE email = %s", (email,))
-    if cursor.fetchone():
-        cursor.close()
-        conn.close()
-        raise HTTPException(status_code=400, detail="Email already registered")
-    cursor.close()
-    conn.close()
-
-    otp = _generate_otp()
-    _upsert_verification_code("email", email, otp)
-    _send_email_otp(email, otp)
-    return {"message": "Email verification code sent"}
-
-
-@app.post("/verify/email/confirm")
-async def confirm_email_verification(payload: EmailVerificationConfirm):
-    email = (payload.email or "").strip().lower()
-    _confirm_verification_code("email", email, payload.otp.strip())
-    return {"message": "Email verified successfully"}
-
-
-@app.post("/password/forgot/request")
-async def request_password_reset_otp(payload: LoginOtpRequest):
-    email = (payload.email or "").strip().lower()
-    if not _is_valid_email(email):
-        raise HTTPException(status_code=400, detail="Invalid email format")
-
-    conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT id FROM users WHERE email = %s", (email,))
-    user = cursor.fetchone()
-    cursor.close()
-    conn.close()
-
-    if not user:
-        raise HTTPException(status_code=404, detail="User with this email does not exist")
-
-    otp = _generate_otp()
-    _upsert_verification_code("email", email, otp)
-    _send_email_otp(email, otp)
-    return {"message": "Password reset OTP sent to email"}
-
-
-@app.post("/password/forgot/reset")
-async def reset_password_with_otp(payload: PasswordResetConfirm):
-    email = (payload.email or "").strip().lower()
-    if not _is_valid_email(email):
-        raise HTTPException(status_code=400, detail="Invalid email format")
-
-    if len((payload.new_password or "").strip()) < 6:
-        raise HTTPException(status_code=400, detail="New password must be at least 6 characters")
-
-    conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM users WHERE email = %s", (email,))
-    user = cursor.fetchone()
-
-    if not user:
-        cursor.close()
-        conn.close()
-        raise HTTPException(status_code=404, detail="User with this email does not exist")
-
-    _confirm_verification_code("email", email, payload.otp.strip())
-
-    new_password_hash = get_password_hash(payload.new_password.strip())
-    cursor.execute(
-        "UPDATE users SET password_hash = %s WHERE id = %s",
-        (new_password_hash, user["id"]),
-    )
-
-    cursor.execute(
-        "DELETE FROM verification_codes WHERE target_type = 'email' AND target_value = %s",
-        (email,),
-    )
-    conn.commit()
-    cursor.close()
-    conn.close()
-
-    return {"message": "Password reset successful"}
-
-
-@app.post("/verify/mobile/request")
-async def request_mobile_verification(payload: MobileVerificationRequest):
-    mobile_no = _normalize_mobile(payload.mobile_no)
-    if not _is_valid_mobile(mobile_no):
-        raise HTTPException(status_code=400, detail="Invalid mobile number")
-
-    conn = get_db_connection()
-    cursor = conn.cursor(dictionary=True)
-    cursor.execute("SELECT id FROM users WHERE mobile_no = %s", (mobile_no,))
-    if cursor.fetchone():
-        cursor.close()
-        conn.close()
-        raise HTTPException(status_code=400, detail="Mobile number already registered")
-    cursor.close()
-    conn.close()
-
-    otp = _generate_otp()
-    _upsert_verification_code("mobile", mobile_no, otp)
-    _send_mobile_otp(mobile_no, otp)
-    return {"message": "Mobile verification code sent"}
-
-
-@app.post("/verify/mobile/confirm")
-async def confirm_mobile_verification(payload: MobileVerificationConfirm):
-    mobile_no = _normalize_mobile(payload.mobile_no)
-    _confirm_verification_code("mobile", mobile_no, payload.otp.strip())
-    return {"message": "Mobile verified successfully"}
 
 @app.post("/register", response_model=Token)
 async def register(user: UserCreate):
@@ -392,8 +133,8 @@ async def register(user: UserCreate):
 
     cursor.execute(
         """
-        INSERT INTO users (email, mobile_no, password_hash, full_name, role, email_verified, mobile_verified)
-        VALUES (%s, %s, %s, %s, 'user', 1, 1)
+        INSERT INTO users (email, mobile_no, password_hash, full_name, role)
+        VALUES (%s, %s, %s, %s, 'user')
         """,
         (email, mobile_no, hashed_password, user.full_name)
     )
@@ -420,10 +161,17 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
     conn = get_db_connection()
     cursor = conn.cursor(dictionary=True)
 
-    cursor.execute(
-        "SELECT * FROM users WHERE email = %s OR mobile_no = %s",
-        (login_id_email, login_id_mobile),
-    )
+    # Decide whether to search by email or by mobile_no
+    if "@" in login_id_raw:
+        cursor.execute(
+            "SELECT * FROM users WHERE email = %s",
+            (login_id_email,),
+        )
+    else:
+        cursor.execute(
+            "SELECT * FROM users WHERE mobile_no = %s",
+            (login_id_mobile,),
+        )
     user = cursor.fetchone()
 
     if not user or not verify_password(form_data.password, user["password_hash"]):
@@ -667,15 +415,14 @@ async def save_report(report: ReportSave, current_user=Depends(get_current_user)
         INSERT INTO patient_reports
         (
             user_id, 
-            pregnancies, glucose, blood_pressure, skin_thickness, insulin, bmi, diabetes_pedigree_function, age,
+            glucose, blood_pressure, skin_thickness, insulin, bmi, diabetes_pedigree_function, age,
             diabetes_prediction, risk_level, 
             abnormal_json, conditions_json, specialists_json, source
         )
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """,
         (
             current_user.user_id,
-            get_val(inputs, 'Pregnancies', int),
             get_val(inputs, 'Glucose', float),
             get_val(inputs, 'BloodPressure', float),
             get_val(inputs, 'SkinThickness', float),
@@ -743,29 +490,81 @@ async def get_admin_data(current_user=Depends(get_current_admin)):
     try:
         cursor = conn.cursor(dictionary=True)
         
-        # 1. Fetch all reports with user details
-        print("DEBUG: Fetching reports...")
-        cursor.execute("""
-            SELECT 
-                r.id, r.user_id, r.created_at, 
-                r.diabetes_prediction, r.risk_level, r.bmi, 
-                u.full_name, u.email
-            FROM patient_reports r
-            LEFT JOIN users u ON r.user_id = u.id
-            ORDER BY r.created_at DESC
-        """)
-        reports = cursor.fetchall()
-        print(f"DEBUG: Found {len(reports)} reports")
-        
-        # 2. Fetch all users
-        print("DEBUG: Fetching users...")
-        cursor.execute("SELECT id, email, full_name, role, created_at FROM users ORDER BY created_at DESC")
+        # 1. Fetch all users (patients)
+        cursor.execute("SELECT id, email, full_name, created_at FROM users WHERE role = 'user' ORDER BY created_at DESC")
         users = cursor.fetchall()
-        print(f"DEBUG: Found {len(users)} users")
         
+        # 2. Fetch all reports from all 4 tables
+        cursor.execute("SELECT id, user_id, created_at, diabetes_prediction, risk_level, bmi, glucose, blood_pressure, skin_thickness, insulin, diabetes_pedigree_function, age, 'diabetes' as type FROM patient_reports")
+        diabetes_reports = cursor.fetchall()
+        
+        cursor.execute("SELECT id, user_id, created_at, prediction as heart_disease_prediction, age, sex, cp, trestbps, chol, fbs, restecg, thalach, exang, oldpeak, slope, ca, thal, 'heart' as type FROM heart_reports")
+        heart_reports = cursor.fetchall()
+
+        cursor.execute("SELECT id, user_id, created_at, prediction as hypertension_prediction, age, sex, bmi, heart_rate, activity_level, smoker, family_history, 'hypertension' as type FROM hypertension_reports")
+        hypertension_reports = cursor.fetchall()
+
+        cursor.execute("SELECT id, user_id, created_at, cbc_json, interpretation_json, 'cbc' as type FROM cbc_reports")
+        cbc_reports = cursor.fetchall()
+
+        # Combine all reports into one pool
+        all_reports = diabetes_reports + heart_reports + hypertension_reports + cbc_reports
+
+        # Parse JSON for CBC reports if needed (for frontend processing)
+        for r in all_reports:
+             if r.get('type') == 'cbc':
+                 if r.get('cbc_json'):
+                     r['cbc'] = json.loads(r['cbc_json'])
+                 if r.get('interpretation_json'):
+                     r['interpretation'] = json.loads(r['interpretation_json'])
+                 if 'cbc_json' in r: del r['cbc_json']
+                 if 'interpretation_json' in r: del r['interpretation_json']
+
+        # Group reports by user_id
+        reports_by_user = {}
+        for r in all_reports:
+            uid = r['user_id']
+            if not uid: continue
+            if uid not in reports_by_user:
+                reports_by_user[uid] = []
+            reports_by_user[uid].append(r)
+
+        # Build final patient-centric response
+        patients_data = []
+        for u in users:
+            uid = u['id']
+            user_history = reports_by_user.get(uid, [])
+            
+            # Sort history newest first
+            user_history.sort(key=lambda x: x['created_at'], reverse=True)
+
+            # Determine latest risk level from latest diabetes report (if exists)
+            latest_risk = "Low"
+            for r in user_history:
+                if r.get('type') == 'diabetes' and r.get('risk_level'):
+                    latest_risk = r['risk_level']
+                    break
+
+            # Check if they have ANY positive predictions lately
+            has_diabetes = any(r.get('diabetes_prediction') == 'Positive' for r in user_history if r.get('type') == 'diabetes')
+            has_heart = any(r.get('heart_disease_prediction') == 'Positive' for r in user_history if r.get('type') == 'heart')
+            has_htn = any(r.get('hypertension_prediction') == 'Positive' for r in user_history if r.get('type') == 'hypertension')
+
+            patients_data.append({
+                "id": uid,
+                "full_name": u['full_name'],
+                "email": u['email'],
+                "joined_at": u['created_at'],
+                "latest_risk_level": latest_risk,
+                "has_diabetes": has_diabetes,
+                "has_heart": has_heart,
+                "has_hypertension": has_htn,
+                "total_assessments": len(user_history),
+                "history": user_history
+            })
+            
         return {
-            "reports": reports,
-            "users": users
+            "patients": patients_data
         }
         
     except Exception as e:
@@ -829,35 +628,9 @@ async def analyze_manual_cbc(data: ManualCbcInput):
     
     # Process using the shared logic
     from src.cbc_analysis import process_manual_cbc, interpret_cbc
-    from src.ml_service import predict_cbc_condition
     
     cbc_data = process_manual_cbc(input_data)
     interpretation = interpret_cbc(cbc_data)
-    
-    # ML Prediction
-    # We need to form a dict that matches the training data keys exactly
-    # Training keys: Hemoglobin, RBC, WBC, Platelets, MCV, MCH, RDW, Neutrophils, Lymphocytes, Monocytes, Eosinophils, Basophils
-    # We use 0.0 or mean values for missing optional fields to avoid crash if model expects them?
-    # For now, let's just pass what we have and hope pandas/sklearn handles it or we fillna
-    
-    # Prepare ML input with safe defaults for missing values (using normal means)
-    ml_input = {
-        'Hemoglobin': input_data.get('Hemoglobin', 14.0),
-        'RBC': input_data.get('RBC', 5.0),
-        'WBC': input_data.get('WBC', 7000),
-        'Platelets': input_data.get('Platelets', 250000),
-        'MCV': input_data.get('MCV', 90),
-        'MCH': input_data.get('MCH', 30),
-        'RDW': input_data.get('RDW', 13),
-        'Neutrophils': input_data.get('Neutrophils', 55),
-        'Lymphocytes': input_data.get('Lymphocytes', 30),
-        'Monocytes': input_data.get('Monocytes', 5),
-        'Eosinophils': input_data.get('Eosinophils', 3),
-        'Basophils': input_data.get('Basophils', 0.5)
-    }
-    
-    ml_prediction = predict_cbc_condition(ml_input)
-    interpretation['ml_prediction'] = ml_prediction
 
     return {"cbc": cbc_data, "interpretation": interpretation}
 

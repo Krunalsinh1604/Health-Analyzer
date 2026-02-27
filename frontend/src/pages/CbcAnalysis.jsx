@@ -439,7 +439,7 @@ function CbcAnalysisPage() {
 
                 {cbcInterpretation.ml_prediction && (
                   <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid var(--border)' }}>
-                    <h4 style={{ fontSize: '1rem', color: 'var(--muted)', marginBottom: '8px' }}>AI Model Classification</h4>
+                    <h4 style={{ fontSize: '1rem', color: 'var(--muted)', marginBottom: '8px' }}>You may have</h4>
                     <strong style={{ fontSize: '1.2rem', color: 'var(--primary)' }}>{cbcInterpretation.ml_prediction}</strong>
                   </div>
                 )}
@@ -455,6 +455,72 @@ function CbcAnalysisPage() {
           </div>
         </aside>
       </div>
+
+      <div className="layout" style={{ marginTop: '3rem' }}>
+        <section className="panel" style={{ gridColumn: '1 / -1' }}>
+          <div className="card">
+            <div className="card-header">
+              <div>
+                <h3>Understanding Your Metrics</h3>
+                <p>Key indicators evaluated during a Complete Blood Count analysis.</p>
+              </div>
+            </div>
+            <div className="grid three">
+              <div>
+                <h4>Hemoglobin</h4>
+                <p className="note-text">The protein in red blood cells that carries oxygen. Low levels indicate anemia, while high levels can happen in cases of dehydration or polycythemia.</p>
+              </div>
+              <div>
+                <h4>RBC Count</h4>
+                <p className="note-text">Total number of red blood cells. Irregular counts often track alongside hemoglobin abnormalities, helping classify the root cause of anemic episodes.</p>
+              </div>
+              <div>
+                <h4>WBC Count</h4>
+                <p className="note-text">Total white blood cell count. High values often signify active infections, inflammation, or immune system disorders.</p>
+              </div>
+              <div>
+                <h4>Platelets</h4>
+                <p className="note-text">Cell fragments that help your blood clot. Low points risk excessive bleeding, while unusually high points raise risks for unwanted clots.</p>
+              </div>
+              <div>
+                <h4>MCV (Mean Corpuscular Vol)</h4>
+                <p className="note-text">The average size of your red blood cells. Extremely useful for differentiating between microcytic (e.g. Iron Deficient) and macrocytic (e.g. B12 Deficient) anemias.</p>
+              </div>
+              <div>
+                <h4>ESR</h4>
+                <p className="note-text">Erythrocyte Sedimentation Rate. A generalized marker that indicates if inflammation is occurring somewhere in the body.</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="card" style={{ marginTop: '20px' }}>
+            <div className="card-header">
+              <div>
+                <h3>Prevention & Wellness</h3>
+                <p>Lifestyle and dietary habits to maintain a healthy blood profile.</p>
+              </div>
+            </div>
+            <div className="grid three">
+              <div className="feature-card" style={{ padding: '20px', border: '1px solid var(--line)', boxShadow: 'none' }}>
+                <div className="icon-wrapper" style={{ width: '48px', height: '48px', fontSize: '20px', marginBottom: '12px' }}>🥦</div>
+                <h4 style={{ marginBottom: '8px' }}>Iron & Vitamin Intake</h4>
+                <p className="note-text">Ensure adequate consumption of iron-rich foods (spinach, beans) and Vitamin B12 to support proper red blood cell development.</p>
+              </div>
+              <div className="feature-card" style={{ padding: '20px', border: '1px solid var(--line)', boxShadow: 'none' }}>
+                <div className="icon-wrapper" style={{ width: '48px', height: '48px', fontSize: '20px', marginBottom: '12px' }}>💧</div>
+                <h4 style={{ marginBottom: '8px' }}>Hydration</h4>
+                <p className="note-text">Drinking enough water helps maintain proper blood volume and prevents artificially inflated metabolic concentration counts.</p>
+              </div>
+              <div className="feature-card" style={{ padding: '20px', border: '1px solid var(--line)', boxShadow: 'none' }}>
+                <div className="icon-wrapper" style={{ width: '48px', height: '48px', fontSize: '20px', marginBottom: '12px' }}>🛡️</div>
+                <h4 style={{ marginBottom: '8px' }}>Immune Support</h4>
+                <p className="note-text">Manage stress, get adequate sleep, and exercise moderately to maintain steady, healthy White Blood Cell turnover ratios.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+
     </div>
   );
 }

@@ -190,6 +190,9 @@ def interpret_cbc(cbc_data: Dict[str, Dict[str, object]]) -> Dict[str, object]:
         if status in {"Low", "High"}:
             flags.append(f"{name}: {status}")
 
+    from src.ml_service import predict_cbc_condition
+
+    # 1. Run Rule-Based Interpretation
     if _is_low("Hemoglobin") or _is_low("RBC"):
         conditions.append("Possible Anemia")
     if _is_low("MCV") or _is_low("MCH") or _is_high("RDW"):
@@ -214,14 +217,37 @@ def interpret_cbc(cbc_data: Dict[str, Dict[str, object]]) -> Dict[str, object]:
         elif wbc_value >= 25000 and (_is_low("Platelets") or _is_low("Hemoglobin")):
             conditions.append("Possible Leukemia (needs clinical confirmation)")
 
+    # 2. Run ML-Based Interpretation
+    ml_input = {
+        'Hemoglobin': _value("Hemoglobin") or 14.0,
+        'RBC': _value("RBC") or 5.0,
+        'WBC': wbc_value or 7000,
+        'Platelets': _value("Platelets") or 250000,
+        'MCV': _value("MCV") or 90,
+        'MCH': _value("MCH") or 30,
+        'RDW': _value("RDW") or 13,
+        'Neutrophils': _value("Neutrophils") or 55,
+        'Lymphocytes': _value("Lymphocytes") or 30,
+        'Monocytes': _value("Monocytes") or 5,
+        'Eosinophils': _value("Eosinophils") or 3,
+        'Basophils': _value("Basophils") or 0.5
+    }
+    
+    ml_prediction = predict_cbc_condition(ml_input)
+    if ml_prediction and ml_prediction != "Normal" and ml_prediction != "Unknown":
+        conditions.append(f"You may have: {ml_prediction}")
+
     if not flags:
         summary = "All parsed CBC values are within reference ranges."
     else:
         summary = "Abnormal findings: " + ", ".join(flags) + "."
+        if ml_prediction and ml_prediction != "Normal" and ml_prediction != "Unknown":
+            summary += f" You may have {ml_prediction}."
 
     return {
         "flags": flags,
         "possible_conditions": sorted(set(conditions)),
         "summary": summary,
+        "ml_prediction": ml_prediction,
         "note": "This interpretation is informational and not a medical diagnosis.",
     }

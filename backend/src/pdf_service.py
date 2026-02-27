@@ -49,10 +49,6 @@ def extract_parameters_from_pdf(file_path):
     data = {}
 
     patterns = {
-        "Pregnancies": [
-            r"Pregnanc(?:y|ies)\s*[:\-]?\s*(\d+)",
-            r"Gravida\s*[:\-]?\s*(\d+)"
-        ],
         "Glucose": [
             r"Glucose\s*[:\-]?\s*(\d+(?:\.\d+)?)",
             r"Blood\s*Sugar\s*[:\-]?\s*(\d+(?:\.\d+)?)"
@@ -80,7 +76,7 @@ def extract_parameters_from_pdf(file_path):
     for key, pattern_list in patterns.items():
         value = _extract_number(text, pattern_list)
         if value is not None:
-            data[key] = int(value) if key in {"Pregnancies", "Age"} else float(value)
+            data[key] = int(value) if key in {"Age"} else float(value)
 
     return data
 

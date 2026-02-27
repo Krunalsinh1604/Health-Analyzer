@@ -96,7 +96,7 @@ function History() {
                                         className={activeTab === 'general' ? 'active' : ''}
                                         onClick={() => setActiveTab('general')}
                                     >
-                                        General Health
+                                        Diabetes
                                     </button>
                                     <button
                                         className={activeTab === 'cbc' ? 'active' : ''}
@@ -145,7 +145,7 @@ function History() {
                                         {activeTab === 'general' && (
                                             <>
                                                 {generalReports.length === 0 ? (
-                                                    <p>No general health reports found.</p>
+                                                    <p>No diabetes reports found.</p>
                                                 ) : (
                                                     <>
                                                         {viewMode === 'table' ? (

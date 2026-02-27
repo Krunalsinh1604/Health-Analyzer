@@ -21,24 +21,28 @@ function Navbar() {
                 <NavLink to="/dashboard" className={({ isActive }) => `tab${isActive ? " active" : ""}`}>
                     Home
                 </NavLink>
-                <NavLink to="/diabetes" className={({ isActive }) => `tab${isActive ? " active" : ""}`}>
-                    Diabetes
-                </NavLink>
-                <NavLink to="/heart-disease" className={({ isActive }) => `tab${isActive ? " active" : ""}`}>
-                    Heart Disease
-                </NavLink>
-                <NavLink to="/hypertension" className={({ isActive }) => `tab${isActive ? " active" : ""}`}>
-                    Hypertension
-                </NavLink>
-                <NavLink to="/cbc" className={({ isActive }) => `tab${isActive ? " active" : ""}`}>
-                    Report Analyzer
-                </NavLink>
-                <NavLink to="/history" className={({ isActive }) => `tab${isActive ? " active" : ""}`}>
-                    History
-                </NavLink>
+                {user?.role !== "admin" && (
+                    <>
+                        <NavLink to="/diabetes" className={({ isActive }) => `tab${isActive ? " active" : ""}`}>
+                            Diabetes
+                        </NavLink>
+                        <NavLink to="/heart-disease" className={({ isActive }) => `tab${isActive ? " active" : ""}`}>
+                            Heart Disease
+                        </NavLink>
+                        <NavLink to="/hypertension" className={({ isActive }) => `tab${isActive ? " active" : ""}`}>
+                            Hypertension
+                        </NavLink>
+                        <NavLink to="/cbc" className={({ isActive }) => `tab${isActive ? " active" : ""}`}>
+                            Report Analyzer
+                        </NavLink>
+                        <NavLink to="/history" className={({ isActive }) => `tab${isActive ? " active" : ""}`}>
+                            History
+                        </NavLink>
+                    </>
+                )}
                 {user?.role === "admin" && (
                     <NavLink to="/admin" className={({ isActive }) => `tab${isActive ? " active" : ""}`}>
-                        Admin
+                        Doctor Dashboard
                     </NavLink>
                 )}
             </nav>

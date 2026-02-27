@@ -99,9 +99,26 @@ def generate_cbc_data(n_samples=1000):
     
     def classify(row):
         conditions = []
-        if row['Hemoglobin'] < 12: conditions.append('Anemia')
-        if row['WBC'] > 11000: conditions.append('Infection')
-        if row['Platelets'] < 150000: conditions.append('Thrombocytopenia')
+        # Anemia types based on Hb and MCV
+        if row['Hemoglobin'] < 12:
+            if row['MCV'] < 80:
+                conditions.append('Microcytic Anemia')
+            elif row['MCV'] > 100:
+                conditions.append('Macrocytic Anemia')
+            else:
+                conditions.append('Normocytic Anemia')
+                
+        # WBC conditions
+        if row['WBC'] > 11000: 
+            conditions.append('Leukocytosis (Infection/Inflammation)')
+        elif row['WBC'] < 4000:
+            conditions.append('Leukopenia')
+            
+        # Platelet conditions
+        if row['Platelets'] < 150000: 
+            conditions.append('Thrombocytopenia')
+        elif row['Platelets'] > 450000:
+            conditions.append('Thrombocytosis')
         
         if not conditions:
             return 'Normal'

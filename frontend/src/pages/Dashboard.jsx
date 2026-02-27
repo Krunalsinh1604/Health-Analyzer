@@ -155,7 +155,6 @@ function DiabetesPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          ...formData,
           Glucose: Number(formData.Glucose),
           BloodPressure: Number(formData.BloodPressure),
           SkinThickness: Number(formData.SkinThickness),
@@ -171,7 +170,6 @@ function DiabetesPage() {
       // 2. Save Report (Authenticated)
       const payload = {
         inputs: {
-          ...formData,
           Glucose: Number(formData.Glucose),
           BloodPressure: Number(formData.BloodPressure),
           SkinThickness: Number(formData.SkinThickness),
@@ -368,9 +366,11 @@ function DiabetesPage() {
           </div>
           <div className="stat-card">
             <p>Risk Profile</p>
-            <h2>{result?.risk_level || "Unknown"}</h2>
+            <h2 style={{ color: result?.risk_level === 'High Risk' ? '#ef4444' : result?.risk_level === 'Medium Risk' ? '#f97316' : result?.risk_level === 'Low Risk' ? '#22c55e' : 'inherit' }}>
+              {result?.risk_level || "Unknown"}
+            </h2>
             <div className="progress" style={{ marginTop: '8px' }}>
-              <span style={{ width: result?.risk_level === 'High' ? '100%' : result?.risk_level === 'Medium' ? '60%' : '30%', background: result?.risk_level === 'High' ? '#dc2626' : '#2563eb' }} />
+              <span style={{ width: result?.risk_level === 'High Risk' ? '100%' : result?.risk_level === 'Medium Risk' ? '60%' : '30%', background: result?.risk_level === 'High Risk' ? '#ef4444' : result?.risk_level === 'Medium Risk' ? '#f97316' : '#22c55e' }} />
             </div>
           </div>
           <div className="stat-card">

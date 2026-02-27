@@ -100,8 +100,6 @@ def init_db():
                 password_hash VARCHAR(255) NOT NULL,
                 full_name VARCHAR(255) NOT NULL,
                 role ENUM('user', 'admin') DEFAULT 'user',
-                email_verified TINYINT(1) DEFAULT 1,
-                mobile_verified TINYINT(1) DEFAULT 1,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                 updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
                     ON UPDATE CURRENT_TIMESTAMP
@@ -112,37 +110,13 @@ def init_db():
         if not _column_exists(cursor, "users", "mobile_no"):
             cursor.execute("ALTER TABLE users ADD COLUMN mobile_no VARCHAR(20) UNIQUE NULL")
 
-        if not _column_exists(cursor, "users", "email_verified"):
-            cursor.execute("ALTER TABLE users ADD COLUMN email_verified TINYINT(1) DEFAULT 1")
-
-        if not _column_exists(cursor, "users", "mobile_verified"):
-            cursor.execute("ALTER TABLE users ADD COLUMN mobile_verified TINYINT(1) DEFAULT 1")
-
         cursor.execute(
             """
             UPDATE users
             SET
-                mobile_no = COALESCE(NULLIF(mobile_no, ''), CONCAT('LEGACY_', id)),
-                email_verified = COALESCE(email_verified, 1),
-                mobile_verified = COALESCE(mobile_verified, 1)
+                mobile_no = COALESCE(NULLIF(mobile_no, ''), CONCAT('LEGACY_', id))
             """
         )
-
-        cursor.execute(
-            """
-            CREATE TABLE IF NOT EXISTS verification_codes (
-                id INT AUTO_INCREMENT PRIMARY KEY,
-                target_type ENUM('email', 'mobile') NOT NULL,
-                target_value VARCHAR(255) NOT NULL,
-                code VARCHAR(6) NOT NULL,
-                is_verified TINYINT(1) DEFAULT 0,
-                expires_at DATETIME NOT NULL,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                UNIQUE KEY uq_target_type_value (target_type, target_value)
-            )
-            """
-        )
-        print("Table 'verification_codes' checked/created.")
 
         # PATIENT REPORTS TABLE
         cursor.execute("""
@@ -151,7 +125,6 @@ def init_db():
                 user_id INT NULL,
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
-                pregnancies INT NULL,
                 glucose DECIMAL(8,2) NULL,
                 blood_pressure DECIMAL(8,2) NULL,
                 skin_thickness DECIMAL(8,2) NULL,

@@ -5,7 +5,7 @@ import Navbar from "../components/Navbar";
 import { toast } from "react-toastify";
 
 function HypertensionPage() {
-  const { user, logout } = useAuth();
+  const { user, logout, authFetch } = useAuth();
   const [loading, setLoading] = useState(false);
   const [prediction, setPrediction] = useState(null);
 
@@ -35,18 +35,22 @@ function HypertensionPage() {
         setPrediction(data);
 
         // 2. Save to History (if logged in)
-        if (user && user.access_token) {
-          await fetch('http://127.0.0.1:8000/hypertension/save', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${user.access_token}`
-            },
-            body: JSON.stringify({
-              ...formData,
-              prediction: data.prediction
-            })
-          });
+        if (user) {
+          try {
+            const saveRes = await authFetch('/hypertension/save', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                ...formData,
+                prediction: data.prediction
+              })
+            });
+            if (!saveRes.ok) {
+              console.error("Failed to save hypertension report");
+            }
+          } catch (saveErr) {
+            console.error("Error saving hypertension report:", saveErr);
+          }
         }
 
         toast.success("Analysis Complete & Saved");
@@ -148,6 +152,60 @@ function HypertensionPage() {
           )}
         </div>
       </div>
+
+      <div className="layout" style={{ marginTop: '3rem', margin: '0 2rem 2rem' }}>
+        <section className="panel" style={{ gridColumn: '1 / -1' }}>
+          <div className="card">
+            <div className="card-header">
+              <div>
+                <h3>Understanding Your Metrics</h3>
+                <p>Key indicators evaluated for your hypertension risk profile.</p>
+              </div>
+            </div>
+            <div className="grid three">
+              <div>
+                <h4>Age & Genetics</h4>
+                <p className="note-text">Blood vessels naturally lose elasticity over time. A family history of hypertension roughly doubles your personal baseline risk of developing chronic high blood pressure.</p>
+              </div>
+              <div>
+                <h4>BMI</h4>
+                <p className="note-text">Body Mass Index significantly correlates with blood volume and vascular resistance. Overweight individuals require more pressure to move blood through excess tissue.</p>
+              </div>
+              <div>
+                <h4>Resting Heart Rate</h4>
+                <p className="note-text">A higher resting heart rate means your heart works harder per minute. Over time, this constant intense mechanical stress weakens the heart walls.</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="card" style={{ marginTop: '20px' }}>
+            <div className="card-header">
+              <div>
+                <h3>Prevention & Wellness</h3>
+                <p>Actionable lifestyle changes to manage or prevent hypertension.</p>
+              </div>
+            </div>
+            <div className="grid three">
+              <div className="feature-card" style={{ padding: '20px', border: '1px solid var(--line)', boxShadow: 'none' }}>
+                <div className="icon-wrapper" style={{ width: '48px', height: '48px', fontSize: '20px', marginBottom: '12px' }}>🧂</div>
+                <h4 style={{ marginBottom: '8px' }}>DASH Diet & Sodium</h4>
+                <p className="note-text">Limit daily sodium intake to under 2,300mg (ideally 1,500mg) and focus on the DASH diet emphasizing potassium-rich vegetables and whole grains.</p>
+              </div>
+              <div className="feature-card" style={{ padding: '20px', border: '1px solid var(--line)', boxShadow: 'none' }}>
+                <div className="icon-wrapper" style={{ width: '48px', height: '48px', fontSize: '20px', marginBottom: '12px' }}>🚭</div>
+                <h4 style={{ marginBottom: '8px' }}>Eliminate Smoking</h4>
+                <p className="note-text">Nicotine causes your blood vessels to constrict and your heart to beat faster, temporarily raising blood pressure after every single cigarette.</p>
+              </div>
+              <div className="feature-card" style={{ padding: '20px', border: '1px solid var(--line)', boxShadow: 'none' }}>
+                <div className="icon-wrapper" style={{ width: '48px', height: '48px', fontSize: '20px', marginBottom: '12px' }}>🧘</div>
+                <h4 style={{ marginBottom: '8px' }}>Stress Management</h4>
+                <p className="note-text">Chronic stress keeps your body in an adrenaline-fueled fight-or-flight state. Practice mindfulness, deep breathing, or yoga to lower your resting vascular tension.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+
     </div>
   );
 }
