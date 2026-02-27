@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # Health Analyzer
 
 An advanced **AI-powered Healthcare Analytics & Decision Support System** designed to assist medical professionals and individuals in assessing health risks. The application leverages Machine Learning to predict disease probabilities (Diabetes, Heart Disease, Hypertension) and provides detailed reports and specialist recommendations based on patient data.
@@ -13,6 +12,8 @@ An advanced **AI-powered Healthcare Analytics & Decision Support System** design
 - **Admin Dashboard**: Specialized view for administrators to oversee all user reports and statistics.
 - **Secure Authentication**: JWT-based user registration and login system.
 - **PDF Parsing**: Automatically extracts data from uploaded PDF medical reports.
+- **Power BI Dashboard**: Comprehensive analytics dashboard for health metrics.
+- **Azure Architecture Ready**: Designed with infrastructure and deployment architecture guidelines for Azure.
 
 ## 🛠 Tech Stack
 
@@ -37,6 +38,7 @@ Ensure you have the following installed on your system:
 - **Python** (3.8 or higher)
 - **Node.js** (v14 or higher) & **npm**
 - **MySQL Server**
+- **Power BI Desktop** (optional, for viewing the `.pbix` dashboard)
 
 ## ⚙️ Installation
 
@@ -48,32 +50,35 @@ cd Health-Analyzer
 
 ### 2. Backend Setup
 
-1.  **Create a virtual environment:**
+1.  **Navigate to the backend directory:**
+    ```bash
+    cd backend
+    ```
+
+2.  **Create a virtual environment:**
     ```bash
     python -m venv venv
     source venv/bin/activate  # On Windows: venv\Scripts\activate
     ```
 
-2.  **Install dependencies:**
+3.  **Install dependencies:**
     ```bash
     pip install -r requirements.txt
     ```
 
-3.  **Configure Database:**
+4.  **Configure Database:**
     - Ensure MySQL server is running.
-
     - Create a database named `health_analyzer` (or the application will attempt to create it).
-
     - Update database credentials if necessary by setting environment variables or modifying `src/database.py` (Default: user=`root`, password=``, host=`localhost`, port=`3306`).
 
-4.  **Initialize Database & Application:**
+5.  **Initialize Database & Application:**
     The application initializes the database tables automatically on startup. However, it is recommended to run migrations to ensure the schema is up-to-date:
 
     ```bash
     python manage.py upgrade_db
     ```
 
-    5. **Seed Default Admin:**
+6.  **Seed Default Admin:**
     Initialize the default admin account:
     ```bash
     python manage.py seed_db
@@ -90,7 +95,7 @@ cd Health-Analyzer
 
 1.  **Navigate to the frontend directory:**
     ```bash
-    cd frontend
+    cd ../frontend
     ```
 
 2.  **Install dependencies:**
@@ -105,14 +110,14 @@ This project uses **Alembic** for database migrations. This allows us to:
 - Apply changes safely without losing data.
 - Ensure all environments (local, production) have the same database structure.
 
-**Common Commands:**
+**Common Commands (from the `backend` directory):**
 - `python manage.py upgrade_db`: Apply pending migrations (update DB to latest version).
 - `alembic revision --autogenerate -m "message"`: Create a new migration based on model changes.
 
 ## ▶️ Usage
 
 ### Running the Backend
-From the root directory (ensure venv is active):
+From the `backend` directory (ensure venv is active):
 ```bash
 uvicorn src.api:app --reload
 ```
@@ -123,7 +128,7 @@ The API will be available at `http://localhost:8000`.
 ### Running the Frontend
 From the `frontend` directory:
 ```bash
-npm run dev
+npm run start
 ```
 The application will be accessible at `http://localhost:5173`.
 
@@ -131,19 +136,20 @@ The application will be accessible at `http://localhost:5173`.
 
 ```
 Health-Analyzer/
-├── api/                 # Legacy/Utility scripts
+├── azure/               # Azure architecture guidelines
+├── backend/             # Python Backend Source Code
+│   ├── alembic/         # Database migrations
+│   ├── src/             # Core Application Code
+│   │   ├── api.py       # FastAPI Application Entry Point
+│   │   ├── auth.py      # Authentication Logic
+│   │   ├── database.py  # Database Configuration & Connection
+│   │   ├── models.py    # Database Models
+│   │   ├── ml_service.py# Machine Learning Prediction Logic
+│   │   └── pdf_service.py# PDF Extraction Logic
+│   ├── manage.py        # CLI for management tasks (admin creation)
+│   └── requirements.txt # Python dependencies
 ├── frontend/            # React frontend application
-├── src/                 # Python Backend Source Code
-│   ├── api.py           # FastAPI Application Entry Point
-│   ├── auth.py          # Authentication Logic
-│   ├── database.py      # Database Configuration & Connection
-│   ├── models.py        # Database Models
-│   ├── ml_service.py    # Machine Learning Prediction Logic
-│   ├── pdf_service.py   # PDF Extraction Logic
-│   └── ...              # Other utility modules
-├── alembic/             # Database migrations
-├── manage.py            # CLI for management tasks (admin creation)
-├── requirements.txt     # Python dependencies
+├── powerbi/             # Power BI Dashboard and Datasets
 └── README.md            # Project Documentation
 ```
 
