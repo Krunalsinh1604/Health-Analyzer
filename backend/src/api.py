@@ -11,7 +11,7 @@ from datetime import datetime
 import random
 import re
 import smtplib
-from email.message import EmailMessage
+# from email.message import EmailMessage
 
 # ---------------- IMPORT INTERNAL MODULES ----------------
 
@@ -90,6 +90,16 @@ class ReportSave(BaseModel):
     inputs: dict
     outputs: dict
     source: str = "manual"
+
+
+class ForgotPasswordRequest(BaseModel):
+    mobile_no: str
+
+
+class ResetPasswordRequest(BaseModel):
+    mobile_no: str
+    otp: str
+    new_password: str
 
 
 def _is_valid_email(email: str) -> bool:
@@ -190,6 +200,101 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends()):
 
     return {"access_token": access_token, "token_type": "bearer"}
 
+
+@app.post("/forgot-password")
+async def forgot_password(request: ForgotPasswordRequest):
+    mobile_no = _normalize_mobile(request.mobile_no)
+
+    if not _is_valid_mobile(mobile_no):
+        raise HTTPException(status_code=400, detail="Valid mobile number is required")
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    cursor.execute("SELECT id FROM users WHERE mobile_no = %s", (mobile_no,))
+    user = cursor.fetchone()
+
+    if not user:
+        cursor.close()
+        conn.close()
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Generate a random 6-digit OTP
+    otp = str(random.randint(100000, 999999))
+    expires_at = datetime.now() + timedelta(minutes=10)
+
+    # Invalidate any existing OTPs for this mobile number
+    cursor.execute(
+        "UPDATE verification_codes SET is_verified = 1 WHERE target_type = 'mobile' AND target_value = %s AND is_verified = 0",
+        (mobile_no,)
+    )
+
+    # Save the new OTP
+    cursor.execute(
+        """
+        INSERT INTO verification_codes (target_type, target_value, code, expires_at)
+        VALUES ('mobile', %s, %s, %s)
+        """,
+        (mobile_no, otp, expires_at)
+    )
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    # NOTE: In a real application, you would send this OTP via SMS here!
+    # For demonstration/development purposes, we print it to the console.
+    print(f"OTP for {mobile_no} is: {otp}")
+
+    return {"message": "OTP sent successfully to your mobile number"}
+
+
+@app.post("/reset-password")
+async def reset_password(request: ResetPasswordRequest):
+    mobile_no = _normalize_mobile(request.mobile_no)
+
+    if not _is_valid_mobile(mobile_no):
+        raise HTTPException(status_code=400, detail="Valid mobile number is required")
+
+    conn = get_db_connection()
+    cursor = conn.cursor(dictionary=True)
+
+    # Validate OTP
+    cursor.execute(
+        """
+        SELECT id FROM verification_codes 
+        WHERE target_type = 'mobile' AND target_value = %s AND code = %s AND is_verified = 0 AND expires_at > NOW()
+        ORDER BY created_at DESC LIMIT 1
+        """,
+        (mobile_no, request.otp)
+    )
+    verification = cursor.fetchone()
+
+    if not verification:
+        cursor.close()
+        conn.close()
+        raise HTTPException(status_code=400, detail="Invalid or expired OTP")
+
+    # Hash the new password
+    hashed_password = get_password_hash(request.new_password)
+
+    # Update password
+    cursor.execute(
+        "UPDATE users SET password_hash = %s WHERE mobile_no = %s",
+        (hashed_password, mobile_no)
+    )
+
+    # Mark OTP as verified
+    cursor.execute(
+        "UPDATE verification_codes SET is_verified = 1 WHERE id = %s",
+        (verification['id'],)
+    )
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    return {"message": "Password reset successfully"}
+
 # ---------------- BASIC ROUTES ----------------
 
 @app.get("/")
@@ -230,18 +335,25 @@ async def read_users_me(current_user=Depends(get_current_user)):
 def predict(patient: PatientData):
     data = patient.dict()
 
-    diabetes = predict_diabetes(data)
+    diabetes_output = predict_diabetes(data)
+    diabetes = diabetes_output["prediction"]
+    ml_insights = {
+        "algorithm": diabetes_output["algorithm"],
+        "probability": diabetes_output["probability"]
+    }
+
     analysis = analyze_parameters(data)
     risk = calculate_risk(analysis, diabetes)
     conditions = identify_conditions(analysis, diabetes)
     specialists = recommend_specialist(conditions)
 
     return {
-        "diabetes_prediction": "Positive" if diabetes else "Negative",
+        "diabetes_prediction": "Positive" if diabetes == 1 else "Negative",
         "risk_level": risk,
         "analysis": analysis,
         "possible_conditions": conditions,
-        "recommended_specialists": specialists
+        "recommended_specialists": specialists,
+        "ml_model_insights": ml_insights
     }
 
 # ---------------- HEART DISEASE PREDICTION ----------------
@@ -264,10 +376,18 @@ class HeartData(BaseModel):
 @app.post("/predict/heart")
 def predict_heart(data: HeartData):
     from src.ml_service import predict_heart_disease
-    prediction = predict_heart_disease(data.dict())
+    prediction_output = predict_heart_disease(data.dict())
+    prediction = prediction_output["prediction"]
     
     result = "High Risk of Heart Disease" if prediction == 1 else "Low Risk"
-    return {"prediction": result, "raw": prediction}
+    return {
+        "prediction": result, 
+        "raw": prediction,
+        "ml_model_insights": {
+            "algorithm": prediction_output["algorithm"],
+            "probability": prediction_output["probability"]
+        }
+    }
 
 class HeartReportSave(HeartData):
     prediction: str
@@ -332,10 +452,18 @@ class HypertensionData(BaseModel):
 @app.post("/predict/hypertension")
 def predict_htn(data: HypertensionData):
     from src.ml_service import predict_hypertension
-    prediction = predict_hypertension(data.dict())
+    prediction_output = predict_hypertension(data.dict())
+    prediction = prediction_output["prediction"]
     
     result = "High Risk of Hypertension" if prediction == 1 else "Low Risk"
-    return {"prediction": result, "raw": prediction}
+    return {
+        "prediction": result, 
+        "raw": prediction,
+        "ml_model_insights": {
+            "algorithm": prediction_output["algorithm"],
+            "probability": prediction_output["probability"]
+        }
+    }
 
 class HypertensionReportSave(HypertensionData):
     prediction: str

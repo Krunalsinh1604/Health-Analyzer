@@ -439,8 +439,21 @@ function CbcAnalysisPage() {
 
                 {cbcInterpretation.ml_prediction && (
                   <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid var(--border)' }}>
-                    <h4 style={{ fontSize: '1rem', color: 'var(--muted)', marginBottom: '8px' }}>You may have</h4>
+                    <h4 style={{ fontSize: '1rem', color: 'var(--muted)', marginBottom: '8px' }}>ML Pattern Detected</h4>
                     <strong style={{ fontSize: '1.2rem', color: 'var(--primary)' }}>{cbcInterpretation.ml_prediction}</strong>
+
+                    {cbcInterpretation.ml_model_insights && (
+                      <div style={{ marginTop: '12px', padding: '12px', background: 'var(--bg-sub)', borderRadius: '6px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '0.9rem' }}>
+                          <span style={{ color: 'var(--muted)' }}>Algorithm:</span>
+                          <strong>{cbcInterpretation.ml_model_insights.algorithm}</strong>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
+                          <span style={{ color: 'var(--muted)' }}>Confidence:</span>
+                          <strong>{cbcInterpretation.ml_model_insights.probability}%</strong>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
                 {cbcInterpretation.note && (

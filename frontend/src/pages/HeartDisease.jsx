@@ -377,14 +377,18 @@ function HeartDiseasePage() {
                     </div>
                     <div>
                       <span>Confidence</span>
-                      <strong>High</strong>
+                      <strong>{prediction.ml_model_insights ? `${prediction.ml_model_insights.probability}%` : "High"}</strong>
                     </div>
                   </div>
 
                   <div style={{ marginTop: '20px' }}>
-                    <h4>Clinical Note</h4>
+                    <h4>ML Model Insights</h4>
+                    <div className="pill" style={{ display: 'inline-flex', marginBottom: '10px' }}>
+                      <span>Algorithm</span>
+                      <strong>{prediction.ml_model_insights?.algorithm || "Machine Learning Model"}</strong>
+                    </div>
                     <p style={{ color: 'var(--muted)', fontSize: '0.9rem', lineHeight: '1.5' }}>
-                      This assessment is based on a machine learning model analyzing key indicators like chest pain type, cholesterol, and max heart rate.
+                      This assessment is based on a trained machine learning model analyzing key indicators like chest pain type, cholesterol, and max heart rate.
                     </p>
                   </div>
                 </div>

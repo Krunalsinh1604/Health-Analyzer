@@ -79,13 +79,26 @@ function HypertensionPage() {
           {prediction ? (
             <div className="clinical-result">
               <h3 style={{ marginBottom: '1.5rem', color: 'var(--muted)' }}>Risk Analysis Complete</h3>
-              <div style={{ fontSize: '2.5rem', marginBottom: '2rem' }}>
+              <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>
                 <span className={prediction.raw === 1 ? 'badge-risk-high' : 'badge-risk-low'}>
                   {prediction.prediction}
                 </span>
               </div>
+
+              <div style={{ padding: '1.5rem', background: 'var(--bg-card)', borderRadius: '8px', border: '1px solid var(--line)', marginBottom: '2rem', textAlign: 'left', maxWidth: '400px', margin: '0 auto 2rem' }}>
+                <h4 style={{ marginBottom: '1rem', borderBottom: '1px solid var(--line)', paddingBottom: '0.5rem' }}>ML Model Insights</h4>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+                  <span style={{ color: 'var(--muted)' }}>Algorithm:</span>
+                  <strong>{prediction.ml_model_insights?.algorithm || "Machine Learning Model"}</strong>
+                </div>
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span style={{ color: 'var(--muted)' }}>Confidence:</span>
+                  <strong>{prediction.ml_model_insights ? `${prediction.ml_model_insights.probability}%` : "High"}</strong>
+                </div>
+              </div>
+
               <p style={{ color: 'var(--muted)', maxWidth: '500px', margin: '0 auto 2rem' }}>
-                Based on your vitals and lifestyle factors, our AI model has profiled your hypertension risk.
+                Based on your vitals and lifestyle factors, our trained AI model has profiled your hypertension risk.
               </p>
               <button className="clinical-btn" onClick={() => setPrediction(null)} style={{ background: 'var(--muted)' }}>
                 Check Another Profile

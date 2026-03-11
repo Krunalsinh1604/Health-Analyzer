@@ -5,12 +5,13 @@ An advanced **AI-powered Healthcare Analytics & Decision Support System** design
 ## 🚀 Features
 
 - **Disease Prediction**: AI models to predict the likelihood of Diabetes, Hypertension, and Heart Disease.
+- **Batch ML Testing**: Capabilities to process and evaluate large datasets of ML predictions simultaneously.
 - **CBC Analysis**: Upload and analyze CBC (Complete Blood Count) reports from PDF files.
 - **Risk Assessment**: Calculates overall health risk scores based on multiple parameters.
 - **Specialist Recommendations**: Suggests medical specialists based on identified conditions.
-- **Report Management**: Save, view, and manage patient reports with a comprehensive history view.
-- **Admin Dashboard**: Specialized view for administrators to oversee all user reports and statistics.
-- **Secure Authentication**: JWT-based user registration and login system.
+- **Report Management**: Save, view, and manage patient reports with a comprehensive history view containing detailed clinical data.
+- **Admin Dashboard**: Specialized view for administrators to oversee all user reports, statistics, and access in-depth patient records.
+- **Secure Authentication**: Robust user registration featuring secure OTP-based mobile login and JWT session management.
 - **PDF Parsing**: Automatically extracts data from uploaded PDF medical reports.
 - **Power BI Dashboard**: Comprehensive analytics dashboard for health metrics.
 - **Azure Architecture Ready**: Designed with infrastructure and deployment architecture guidelines for Azure.
