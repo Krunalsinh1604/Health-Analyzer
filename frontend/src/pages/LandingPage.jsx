@@ -1,424 +1,249 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import heroHand from "../assets/hero-hand.png";
-import heartEcg from "../assets/heart-ecg.png";
-import beHealthy from "../assets/be-healthy.png";
-import medicalIcons from "../assets/medical-icons.png"; // Assuming the blue icons image
-import Footer from "../components/Footer";
+import './LandingPage.css';
 
-const LandingPage = () => {
+// --- COMPONENTS ---
+
+const Navbar = () => (
+  <nav style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1000, background: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(12px)', borderBottom: '1px solid var(--border)', padding: '16px 5%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+    <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
+      <div style={{ width: 32, height: 32, background: 'linear-gradient(135deg, var(--accent), var(--accent-soft))', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold' }}>H</div>
+      <span style={{ fontSize: 18, fontWeight: 800, color: 'var(--primary)', letterSpacing: '-0.02em' }}>HealthAnalyzer<span style={{color: 'var(--accent)'}}>.</span></span>
+    </Link>
+    <div style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
+      <a href="#features" style={{ color: 'var(--content-muted)', textDecoration: 'none', fontSize: 14, fontWeight: 600 }}>Features</a>
+      <a href="#how-it-works" style={{ color: 'var(--content-muted)', textDecoration: 'none', fontSize: 14, fontWeight: 600 }}>Workflow</a>
+      <Link to="/login" style={{ color: 'var(--primary)', textDecoration: 'none', fontSize: 14, fontWeight: 700 }}>Sign In</Link>
+      <Link to="/register" className="btn btn-primary" style={{ padding: '10px 24px', fontSize: 13, borderRadius: '12px' }}>Get Started</Link>
+    </div>
+  </nav>
+);
+
+const MappedDashboard = () => (
+  <div style={{ padding: '24px', background: 'var(--content-bg)', display: 'grid', gridTemplateColumns: '220px 1fr', gap: '24px' }}>
+    <div style={{ borderRight: '1px solid var(--border)', paddingRight: '24px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+      <div style={{ padding: '10px 16px', background: 'rgba(20, 184, 166, 0.1)', borderRadius: '10px', color: 'var(--accent)', fontSize: '13px', fontWeight: 800 }}>Clinical Workspace</div>
+      {['Diagnostic Registry', 'Biolink Sync', 'Risk Trajectories', 'Team Analytics', 'Settings'].map(item => (
+        <div key={item} style={{ padding: '8px 16px', color: 'var(--content-muted)', fontSize: '12px', fontWeight: 600 }}>{item}</div>
+      ))}
+    </div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+        {[
+          { label: 'Glucose', val: '94', unit: 'mg/dL', status: 'Optimal', color: '#10b981' },
+          { label: 'Blood Pressure', val: '118/78', unit: 'mmHg', status: 'Normal', color: '#10b981' },
+          { label: 'Oxygen Sat', val: '99', unit: '%', status: 'Stable', color: '#10b981' },
+          { label: 'Diabetes Risk', val: '4.2%', unit: 'Prop', status: 'Minimal', color: '#10b981' }
+        ].map(stat => (
+          <div key={stat.label} style={{ background: 'var(--content-card)', border: '1px solid var(--border)', padding: '16px', borderRadius: '16px' }}>
+            <div style={{ fontSize: '10px', color: 'var(--content-muted)', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.05em', marginBottom: '8px' }}>{stat.label}</div>
+            <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--primary)' }}>{stat.val}<span style={{ fontSize: '11px', marginLeft: '4px', color: 'var(--content-muted)' }}>{stat.unit}</span></div>
+            <div style={{ fontSize: '10px', color: stat.color, marginTop: '8px', fontWeight: 800 }}>• {stat.status}</div>
+          </div>
+        ))}
+      </div>
+      <div style={{ background: 'var(--content-card)', border: '1px solid var(--border)', borderRadius: '16px', padding: '24px', height: '180px', position: 'relative' }}>
+        <div style={{ fontSize: '13px', color: 'var(--primary)', fontWeight: 800, marginBottom: '20px' }}>Real-time Biometric Pulse Analysis</div>
+        <svg width="100%" height="80" viewBox="0 0 400 100" preserveAspectRatio="none">
+          <path d="M0,80 Q50,70 100,50 T200,60 T300,20 T400,30" fill="none" stroke="var(--accent)" strokeWidth="3" />
+          <path d="M0,90 Q50,85 100,75 T200,80 T300,60 T400,65" fill="none" stroke="var(--accent-soft)" strokeWidth="2" strokeDasharray="6" />
+        </svg>
+      </div>
+    </div>
+  </div>
+);
+
+const FeatureCard = ({ icon, title, desc }) => (
+  <div className="bento-card scroll-reveal">
+    <div className="card-icon">{icon}</div>
+    <h3 style={{ fontSize: '20px', margin: '0 0 12px' }}>{title}</h3>
+    <p style={{ color: 'var(--content-muted)', fontSize: '15px', lineHeight: '1.5', margin: 0 }}>{desc}</p>
+  </div>
+);
+
+// --- MAIN PAGE ---
+
+export default function LandingPage() {
+  const revealRefs = useRef([]);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+          }
+        });
+      },
+      { threshold: 0.1 }
+    );
+
+    document.querySelectorAll('.scroll-reveal').forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <div className="landing-page">
-      <div className="background-pattern"></div>
+    <div className="landing-root">
+      <Navbar />
 
-      <header className="landing-header">
-        <div className="logo">
-          <span className="logo-icon">⚕️</span>
-          <span className="logo-text">Health Analyzer</span>
+      {/* HERO SECTION */}
+      <header className="hero">
+        <div className="hero-grid" />
+        <div className="hero-glow" />
+        <div className="hero-inner scroll-reveal visible">
+          <span className="hero-tag">ENTERPRISE CLINICAL ANALYTICS</span>
+          <h1>Clinical Intelligence,<br /><span className="gradient-highlight">Zero Compromise.</span></h1>
+          <p>
+            Unified healthcare OS for predictive multi-disease stratification, automated CBC extraction, and real-time patient telemetry.
+          </p>
+          <div style={{ display: 'flex', gap: 16 }}>
+            <Link to="/register" className="btn btn-primary">Launch Workspace</Link>
+            <a href="#how-it-works" className="btn btn-glass">Explore Documentation</a>
+          </div>
+
+          <div className="hero-mockup animate-float">
+            <div style={{ background: 'var(--content-bg)', padding: '12px 20px', borderBottom: '1px solid var(--border)', display: 'flex', gap: '8px' }}>
+              <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#ff5f56' }} />
+              <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#ffbd2e' }} />
+              <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#27c93f' }} />
+            </div>
+            <MappedDashboard />
+          </div>
         </div>
-        <nav>
-          <Link to="/login" className="nav-link">Log In</Link>
-          <Link to="/register" className="btn-primary">Get Started</Link>
-        </nav>
       </header>
 
-      <main>
-        <section className="hero">
-          <div className="hero-content">
-            <span className="pill-label">AI-Powered Diagnostics</span>
-            <h1>The Future of <br /> <span className="highlight">Personal Health</span></h1>
-            <p>
-              Advanced machine learning models for real-time risk assessment.
-              Predict diabetes, heart disease, and hypertension with clinical precision.
-            </p>
-            <div className="cta-buttons">
-              <Link to="/register" className="btn-primary big">Start Free Analysis</Link>
-              <Link to="/login" className="btn-secondary big">Access Dashboard</Link>
-            </div>
-            <div className="stats-row">
-              <div className="stat">
-                <strong>98%</strong>
-                <span>Accuracy</span>
+      {/* STATS BAR */}
+      <div className="stats-bar scroll-reveal">
+        <div className="stats-inner">
+          <div className="stat-item">
+            <h3>99.9%</h3>
+            <p>DIAGNOSTIC ACCURACY</p>
+          </div>
+          <div className="stat-item">
+            <h3>&lt; 2s</h3>
+            <p>EXTRACTION LATENCY</p>
+          </div>
+          <div className="stat-item">
+            <h3>500k+</h3>
+            <p>RECORDS ANALYZED</p>
+          </div>
+          <div className="stat-item">
+            <h3>HIPAA</h3>
+            <p>SECURITY COMPLIANT</p>
+          </div>
+        </div>
+      </div>
+
+      {/* FEATURES SECTION */}
+      <section id="features" className="section">
+        <div className="hero-inner">
+          <div className="section-header">
+            <span className="section-tag">Capabilities</span>
+            <h2>Every clinical vector. <br />One unified platform.</h2>
+            <p className="desc">Deeply integrated algorithms mapping precise patient trajectories across chronic and acute conditions.</p>
+          </div>
+          <div className="card-grid">
+            <FeatureCard 
+              icon="🧬" 
+              title="Predictive Stratification" 
+              desc="ML models actively assess incoming parameters to flag pre-diabetic or hypertensive escalations before they occur."
+            />
+            <FeatureCard 
+              icon="🩸" 
+              title="Automated CBC Extraction" 
+              desc="Proprietary Vision AI normalizes unstructured PDF reports into structured clinical datasets in seconds."
+            />
+            <FeatureCard 
+              icon="🛡️" 
+              title="Enterprise Security" 
+              desc="Military-grade encryption for all patient data, ensuring full HIPAA and GDPR compliance at scale."
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* HOW IT WORKS */}
+      <section id="how-it-works" className="section section-grey">
+        <div className="hero-inner">
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 1fr) 1fr', gap: '80px', alignItems: 'center', textAlign: 'left' }}>
+            <div className="scroll-reveal">
+              <span className="section-tag">Clinical Workflow</span>
+              <h2>Seamless Data Transformation</h2>
+              <p className="desc" style={{ marginBottom: '32px' }}>We've replaced scattered spreadsheets with a single pane of glass for clinical decision making.</p>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                {[
+                  { step: '01', t: 'Data Ingestion', d: 'Securely upload clinical PDFs or stream real-time vitals.' },
+                  { step: '02', t: 'AI Processing', d: 'Models run multi-variable risk stratification against global benchmarks.' },
+                  { step: '03', t: 'Clinical Insight', d: 'Actionable reports with prediction confidence and historical trends.' }
+                ].map(item => (
+                  <div key={item.step} style={{ display: 'flex', gap: '20px' }}>
+                    <span style={{ fontSize: '18px', fontWeight: '800', color: 'var(--accent)' }}>{item.step}</span>
+                    <div>
+                      <h4 style={{ margin: '0 0 4px', fontSize: '16px' }}>{item.t}</h4>
+                      <p style={{ margin: 0, fontSize: '14px', color: 'var(--content-muted)' }}>{item.d}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
-              <div className="stat">
-                <strong>Instant</strong>
-                <span>Results</span>
+            </div>
+            <div className="scroll-reveal bento-card" style={{ padding: 0, overflow: 'hidden', border: 'none', boxShadow: 'var(--shadow-xl)' }}>
+              <div style={{ background: 'var(--bg-main)', padding: '24px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontWeight: 'bold', fontSize: '14px', color: 'var(--primary)' }}>Patient Risk Factor Map</span>
+                <span style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', padding: '4px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold' }}>CRITICAL</span>
               </div>
-              <div className="stat">
-                <strong>Secure</strong>
-                <span>Data</span>
+              <div style={{ padding: '32px', background: 'var(--content-card)' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  {[
+                    { l: 'BP Complexity', w: '85%' },
+                    { l: 'Glucose Stability', w: '40%' },
+                    { l: 'Cardiac Elasticity', w: '72%' }
+                  ].map(line => (
+                    <div key={line.l}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '8px', color: '#64748b' }}>
+                        <span>{line.l}</span>
+                        <span>{line.w}</span>
+                      </div>
+                      <div style={{ height: '6px', background: 'var(--bg-main)', borderRadius: '3px' }}>
+                        <div style={{ height: '100%', width: line.w, background: 'var(--accent)', borderRadius: '3px' }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
+        </div>
+      </section>
 
-          <div className="hero-visual">
-            <div className="image-container tilt-effect">
-              <img src={heroHand} alt="Futuristic Health Interface" className="hero-img" />
-              <div className="glow-effect"></div>
+      {/* FINAL CTA */}
+      <section className="section" style={{ textAlign: 'center', background: 'var(--accent)', color: 'white' }}>
+        <div className="hero-inner scroll-reveal">
+          <h2 style={{ color: 'white', marginBottom: '24px' }}>Ready to transform your clinical workflow?</h2>
+          <p style={{ color: 'rgba(255,255,255,0.8)', marginBottom: '40px', maxWidth: '600px', margin: '0 auto 40px', fontWeight: 500 }}>Join hundreds of practitioners using Health Analyzer to deliver precise, data-driven patient care.</p>
+          <div style={{ display: 'flex', gap: 16, justifyContent: 'center' }}>
+            <Link to="/register" className="btn btn-glass" style={{ background: 'var(--primary)', color: 'var(--bg-main)', fontWeight: 800 }}>Start Free Trial</Link>
+            <Link to="/login" className="btn btn-outline" style={{ color: 'white', borderColor: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>Platform Access</Link>
+          </div>
+        </div>
+      </section>
+
+      {/* FOOTER */}
+      <footer style={{ padding: '60px 5% 30px', background: 'var(--content-bg)', borderTop: '1px solid var(--border)' }}>
+        <div className="hero-inner">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ width: 24, height: 24, background: 'var(--accent)', borderRadius: 6 }} />
+              <span style={{ fontWeight: 'bold', color: 'var(--primary)' }}>Health Analyzer</span>
+            </div>
+            <div style={{ display: 'flex', gap: 24, fontSize: '14px', color: 'var(--content-muted)' }}>
+              <span>Privacy Policy</span>
+              <span>Terms of Service</span>
+              <span>© 2026 Health Analyzer Systems</span>
             </div>
           </div>
-        </section>
-
-        <section className="features-preview">
-          <div className="feature-card">
-            <div className="card-image">
-              <img src={heartEcg} alt="Heart Health" />
-            </div>
-            <div className="card-content">
-              <h3>Heart Health</h3>
-              <p>ECG-grade predictive modeling for cardiac risk.</p>
-              <Link to="/heart-disease" className="card-link">Learn more &rarr;</Link>
-            </div>
-          </div>
-
-          <div className="feature-card">
-            <div className="card-image">
-              <img src={beHealthy} alt="General Wellness" />
-            </div>
-            <div className="card-content">
-              <h3>Vitals Monitoring</h3>
-              <p>Comprehensive tracking for blood pressure & BMI.</p>
-              <Link to="/hypertension" className="card-link">Track now &rarr;</Link>
-            </div>
-          </div>
-
-          <div className="feature-card" style={{ background: 'linear-gradient(145deg, rgba(37, 99, 235, 0.1), rgba(15, 23, 42, 0.6))' }}>
-            <div className="card-content" style={{ display: 'flex', flexDirection: 'column', height: '100%', justifyContent: 'center' }}>
-              <div className="icon-large">📄</div>
-              <h3>Smart OCR</h3>
-              <p>Upload reports (PDF/Photo) for instant digitization.</p>
-              <Link to="/cbc" className="card-link">Try Demo &rarr;</Link>
-            </div>
-          </div>
-        </section>
-      </main>
-
-      <Footer />
-
-      <style>{`
-        :root {
-            --primary-glow: #2563eb;
-            --secondary-glow: #ec4899;
-            --bg-dark: #020617;
-            --text-light: #f8fafc;
-        }
-
-        .landing-page {
-            background-color: var(--bg-dark);
-            color: var(--text-light);
-            min-height: 100vh;
-            font-family: 'Inter', sans-serif;
-            overflow-x: hidden;
-            position: relative;
-        }
-
-        .background-pattern {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-image: url(${medicalIcons}); /* Fallback if image missing */
-            background-size: 600px;
-            opacity: 0.03;
-            pointer-events: none;
-            z-index: 0;
-        }
-
-        .landing-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 1.5rem 8%;
-            backdrop-filter: blur(12px);
-            background: rgba(2, 6, 23, 0.8);
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-        }
-
-        .logo { 
-            display: flex; 
-            align-items: center; 
-            gap: 12px; 
-            font-size: 1.5rem; 
-            font-weight: 700; 
-            letter-spacing: -0.5px;
-        }
-
-        .nav-link {
-            color: #94a3b8;
-            text-decoration: none;
-            margin-right: 30px;
-            font-weight: 500;
-            transition: color 0.2s;
-        }
-        .nav-link:hover { color: white; }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #3b82f6, #2563eb);
-            color: white;
-            padding: 12px 28px;
-            border-radius: 50px;
-            text-decoration: none;
-            font-weight: 600;
-            box-shadow: 0 4px 14px 0 rgba(37, 99, 235, 0.3);
-            transition: all 0.2s ease;
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
-        }
-
-        .btn-secondary {
-            background: rgba(255,255,255,0.05);
-            color: white;
-            padding: 12px 28px;
-            border-radius: 50px;
-            text-decoration: none;
-            font-weight: 600;
-            border: 1px solid rgba(255,255,255,0.1);
-            backdrop-filter: blur(10px);
-            transition: all 0.2s ease;
-        }
-        .btn-secondary:hover {
-             background: rgba(255,255,255,0.1);
-             transform: translateY(-2px);
-        }
-
-        .hero {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 5rem 8% 8rem;
-            position: relative;
-            z-index: 1;
-        }
-        
-        .hero::before {
-             content: '';
-             position: absolute;
-             top: -20%;
-             left: -10%;
-             width: 60vw;
-             height: 60vw;
-             background: radial-gradient(circle, rgba(37, 99, 235, 0.15) 0%, transparent 70%);
-             filter: blur(80px);
-             z-index: -1;
-        }
-
-        .hero-content {
-            flex: 1;
-            max-width: 600px;
-            padding-right: 4rem;
-        }
-
-        .pill-label {
-            display: inline-block;
-            background: rgba(37, 99, 235, 0.1);
-            color: #60a5fa;
-            padding: 8px 16px;
-            border-radius: 100px;
-            font-size: 0.875rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            border: 1px solid rgba(37, 99, 235, 0.2);
-            margin-bottom: 2rem;
-            box-shadow: 0 0 20px rgba(37, 99, 235, 0.1);
-        }
-
-        h1 {
-            font-size: 4rem;
-            line-height: 1.1;
-            margin: 0 0 1.5rem;
-            font-weight: 800;
-            letter-spacing: -1px;
-        }
-
-        .highlight {
-            background: linear-gradient(to right, #60a5fa, #a78bfa, #ec4899);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        p {
-            font-size: 1.25rem;
-            color: #94a3b8;
-            line-height: 1.6;
-            margin-bottom: 2.5rem;
-            max-width: 90%;
-        }
-
-        .cta-buttons {
-            display: flex;
-            gap: 1rem;
-            margin-bottom: 3.5rem;
-        }
-
-        .big {
-             padding: 16px 36px;
-             font-size: 1.1rem;
-        }
-
-        .stats-row {
-            display: flex;
-            gap: 4rem;
-            border-top: 1px solid rgba(255,255,255,0.1);
-            padding-top: 2rem;
-        }
-
-        .stat strong {
-            display: block;
-            font-size: 1.75rem;
-            font-weight: 700;
-            color: white;
-            margin-bottom: 0.25rem;
-        }
-        .stat span {
-            color: #64748b;
-            font-size: 0.9rem;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .hero-visual {
-            flex: 1;
-            display: flex;
-            justify-content: flex-end;
-            position: relative;
-        }
-
-        .image-container {
-             position: relative;
-             border-radius: 30px;
-             overflow: hidden;
-             box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.5);
-             transform: perspective(1000px) rotateY(-5deg);
-             transition: transform 0.5s ease;
-        }
-        
-        .image-container:hover {
-             transform: perspective(1000px) rotateY(0deg);
-        }
-
-        .hero-img {
-             width: 100%;
-             max-width: 600px;
-             display: block;
-             border-radius: 30px;
-        }
-
-        .glow-effect {
-             position: absolute;
-             top: 0;
-             left: 0;
-             right: 0;
-             bottom: 0;
-             background: radial-gradient(circle at 50% 50%, rgba(255,255,255,0.1), transparent 60%);
-             pointer-events: none;
-        }
-
-        .features-preview {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 2rem;
-            padding: 2rem 8%;
-            margin-top: -6rem;
-            position: relative;
-            z-index: 10;
-        }
-
-        .feature-card {
-            background: rgba(30, 41, 59, 0.7);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 24px;
-            overflow: hidden;
-            transition: transform 0.3s, box-shadow 0.3s;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .feature-card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 20px 40px -10px rgba(0,0,0,0.5);
-            border-color: rgba(255, 255, 255, 0.2);
-        }
-
-        .card-image {
-             height: 200px;
-             overflow: hidden;
-             position: relative;
-        }
-
-        .card-image img {
-             width: 100%;
-             height: 100%;
-             object-fit: cover;
-             transition: transform 0.5s;
-        }
-
-        .feature-card:hover .card-image img {
-             transform: scale(1.05);
-        }
-
-        .card-content {
-             padding: 2rem;
-        }
-
-        .card-content h3 {
-             font-size: 1.5rem;
-             margin-bottom: 0.5rem;
-             font-weight: 700;
-        }
-        
-        .card-content p {
-             font-size: 1rem;
-             margin-bottom: 1.5rem;
-             color: #cbd5e1;
-        }
-
-        .card-link {
-             color: #60a5fa;
-             text-decoration: none;
-             font-weight: 600;
-             font-size: 0.95rem;
-             display: inline-flex;
-             align-items: center;
-             gap: 5px;
-        }
-
-        .card-link:hover {
-             gap: 8px;
-        }
-        
-        .icon-large {
-             font-size: 3rem;
-             margin-bottom: 1rem;
-        }
-
-        @media (max-width: 1024px) {
-            h1 { font-size: 3rem; }
-            .hero { padding-bottom: 4rem; }
-        }
-
-        @media (max-width: 768px) {
-            .hero {
-                flex-direction: column;
-                text-align: center;
-                padding-top: 3rem;
-            }
-            .hero-content { padding-right: 0; margin-bottom: 4rem; }
-            .cta-buttons, .stats-row { justify-content: center; }
-            .image-container { transform: none; }
-            .features-preview { margin-top: 0; }
-        }
-      `}</style>
+        </div>
+      </footer>
     </div>
   );
-};
-
-export default LandingPage;
+}

@@ -233,7 +233,13 @@ def interpret_cbc(cbc_data: Dict[str, Dict[str, object]]) -> Dict[str, object]:
         'Basophils': _value("Basophils") or 0.5
     }
     
-    ml_prediction = predict_cbc_condition(ml_input)
+    ml_output = predict_cbc_condition(ml_input)
+    ml_prediction = ml_output["prediction"]
+    ml_insights = {
+        "algorithm": ml_output["algorithm"],
+        "probability": ml_output["probability"]
+    }
+    
     if ml_prediction and ml_prediction != "Normal" and ml_prediction != "Unknown":
         conditions.append(f"You may have: {ml_prediction}")
 
@@ -249,5 +255,6 @@ def interpret_cbc(cbc_data: Dict[str, Dict[str, object]]) -> Dict[str, object]:
         "possible_conditions": sorted(set(conditions)),
         "summary": summary,
         "ml_prediction": ml_prediction,
+        "ml_model_insights": ml_insights,
         "note": "This interpretation is informational and not a medical diagnosis.",
     }

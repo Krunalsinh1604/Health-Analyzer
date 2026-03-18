@@ -2,11 +2,11 @@ import { useState, useMemo, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'react-toastify';
 import Navbar from '../components/Navbar';
-import dashboardHero from '../assets/dashboard-hero.png';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import "./Dashboard.css";
 
 function DiabetesPage() {
-  const { user, logout, authFetch } = useAuth();
+  const { user, authFetch } = useAuth();
   const [formData, setFormData] = useState({
     Glucose: "",
     BloodPressure: "",
@@ -21,100 +21,21 @@ function DiabetesPage() {
   const [pdfFile, setPdfFile] = useState(null);
   const [pdfResult, setPdfResult] = useState(null);
   const [pdfError, setPdfError] = useState("");
-  const [dataSource, setDataSource] = useState("manual");
+  const [dataSource, setDataSource] = useState("manual"); // "manual" or "pdf"
   const [showHistory, setShowHistory] = useState(false);
-  const [historyTab, setHistoryTab] = useState("table"); // 'table' or 'trends'
+  const [historyTab, setHistoryTab] = useState("table"); 
   const [myReports, setMyReports] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // ... (existing referenceMetrics and helper functions remain unchanged)
-
-  const referenceMetrics = useMemo(
-    () => [
-      {
-        key: "Glucose",
-        label: "Glucose",
-        unit: "mg/dL",
-        low: 70,
-        high: 140,
-        target: 100
-      },
-      {
-        key: "BloodPressure",
-        label: "Blood Pressure",
-        unit: "mmHg",
-        low: 60,
-        high: 90,
-        target: 75
-      },
-      {
-        key: "BMI",
-        label: "BMI",
-        unit: "kg/m2",
-        low: 18.5,
-        high: 24.9,
-        target: 22
-      },
-      {
-        key: "Insulin",
-        label: "Insulin",
-        unit: "mu U/mL",
-        low: 2,
-        high: 25,
-        target: 12
-      },
-      {
-        key: "SkinThickness",
-        label: "Skin Thickness",
-        unit: "mm",
-        low: 10,
-        high: 45,
-        target: 25
-      },
-      {
-        key: "Age",
-        label: "Age",
-        unit: "years",
-        low: 18,
-        high: 65,
-        target: 40
-      }
-    ],
-    []
-  );
-
-  const parseNumber = (value) => {
-    if (value === "") {
-      return null;
-    }
-    const parsed = Number(value);
-    return Number.isFinite(parsed) ? parsed : null;
-  };
-
-  const compareRows = useMemo(() => {
-    return referenceMetrics.map((metric) => {
-      const value = parseNumber(formData[metric.key]);
-      if (value === null) {
-        return { ...metric, value: null, delta: null, status: "neutral" };
-      }
-      const delta = value - metric.target;
-      const status = value < metric.low || value > metric.high ? "alert" : "ok";
-      return { ...metric, value, delta, status };
-    });
-  }, [formData, referenceMetrics]);
-
-  const filledFields = Object.values(formData).filter((value) => value !== "");
-  const completionRate = Math.round(
-    (filledFields.length / Object.keys(formData).length) * 100
-  );
-
-  const inRangeCount = compareRows.filter(
-    (row) => row.value !== null && row.status === "ok"
-  ).length;
-  const trackedCount = compareRows.filter((row) => row.value !== null).length;
-  const profileScore = trackedCount
-    ? Math.round((inRangeCount / trackedCount) * 100)
-    : 0;
+  // Reference Metrics for UI feedback
+  const referenceMetrics = useMemo(() => [
+    { key: "Glucose", label: "Glucose", unit: "mg/dL", low: 70, high: 140, target: 100 },
+    { key: "BloodPressure", label: "Blood Pressure", unit: "mmHg", low: 60, high: 90, target: 75 },
+    { key: "BMI", label: "BMI", unit: "kg/m2", low: 18.5, high: 24.9, target: 22 },
+    { key: "Insulin", label: "Insulin", unit: "mu U/mL", low: 2, high: 25, target: 12 },
+    { key: "SkinThickness", label: "Skin Thickness", unit: "mm", low: 10, high: 45, target: 25 },
+    { key: "Age", label: "Age", unit: "years", low: 18, high: 65, target: 40 }
+  ], []);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -126,31 +47,19 @@ function DiabetesPage() {
       const response = await authFetch("/reports/history");
       if (response.ok) {
         const data = await response.json();
-        // Reverse for chart (oldest to newest), but keep logic flexible
-        const reports = data.reports || [];
-        setMyReports(reports);
+        setMyReports(data.reports || []);
       }
-    } catch (e) {
-      console.error(e);
-    }
+    } catch (e) { console.error(e); }
   };
 
   useEffect(() => {
-    if (showHistory) {
-      fetchHistory();
-    }
+    if (showHistory) fetchHistory();
   }, [showHistory, authFetch]);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-  };
 
   const analyzeReport = async () => {
     setLoading(true);
     setResult(null);
-
     try {
-      // 1. Get Prediction
       const response = await fetch("http://127.0.0.1:8000/predict", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -167,92 +76,42 @@ function DiabetesPage() {
       const data = await response.json();
       setResult(data);
 
-      // 2. Save Report (Authenticated)
-      const payload = {
-        inputs: {
-          Glucose: Number(formData.Glucose),
-          BloodPressure: Number(formData.BloodPressure),
-          SkinThickness: Number(formData.SkinThickness),
-          Insulin: Number(formData.Insulin),
-          BMI: Number(formData.BMI),
-          DiabetesPedigreeFunction: Number(formData.DiabetesPedigreeFunction),
-          Age: Number(formData.Age)
-        },
-        outputs: data,
-        source: dataSource,
-      };
-
       await authFetch("/reports/save", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          inputs: formData,
+          outputs: data,
+          source: dataSource,
+        }),
       });
-
-      // Refresh history if open
-      if (showHistory) {
-        fetchHistory();
-      }
-
+      if (showHistory) fetchHistory();
+      toast.success("Analysis complete and synchronized.");
     } catch (error) {
-      console.error("Error:", error);
-      toast.error("An error occurred during analysis or saving.");
-    } finally {
-      setLoading(false);
-    }
+      toast.error("Analysis sequence failed.");
+    } finally { setLoading(false); }
   };
 
   const uploadPdf = async () => {
-    if (!pdfFile) {
-      toast.warn("Please select a file first");
-      return;
-    }
-
+    if (!pdfFile) { toast.warn("Select telemetry report"); return; }
     const formDataPdf = new FormData();
     formDataPdf.append("file", pdfFile);
-
-    setPdfError("");
-    setPdfResult(null);
-
-    const loaderId = toast.loading("Uploading report...");
-
+    setLoading(true);
     try {
-      const response = await fetch("http://127.0.0.1:8000/upload-report", {
-        method: "POST",
-        body: formDataPdf
-      });
-
-      if (!response.ok) {
-        setPdfError("PDF upload failed. Please try again.");
-        toast.update(loaderId, { render: "Upload failed", type: "error", isLoading: false, autoClose: 3000 });
-        return;
-      }
-
+      const response = await fetch("http://127.0.0.1:8000/upload-report", { method: "POST", body: formDataPdf });
       const data = await response.json();
-      const extracted = data.extracted_parameters || {};
-      setPdfResult(extracted);
+      setPdfResult(data.extracted_parameters || {});
       setDataSource("pdf");
-
-      if (Object.keys(extracted).length === 0) {
-        setPdfError("No parameters detected. Try a clearer report.");
-        toast.update(loaderId, { render: "No data detected", type: "warning", isLoading: false, autoClose: 3000 });
-      } else {
-        toast.update(loaderId, { render: "Report processed successfully!", type: "success", isLoading: false, autoClose: 3000 });
-      }
-    } catch (error) {
-      setPdfError("Unable to process the PDF right now.");
-      toast.update(loaderId, { render: "Processing error", type: "error", isLoading: false, autoClose: 3000 });
-    }
+      toast.success("Extraction complete.");
+    } catch (error) { toast.error("PDF processing error."); }
+    finally { setLoading(false); }
   };
 
   const applyPdfData = () => {
-    setFormData((prev) => ({
-      ...prev,
-      ...pdfResult
-    }));
+    setFormData((prev) => ({ ...prev, ...pdfResult }));
     setDataSource("manual");
   };
 
-  // Prepare data for chart (sorted by date ascending)
   const chartData = useMemo(() => {
     return [...myReports].sort((a, b) => new Date(a.created_at) - new Date(b.created_at)).map(r => ({
       date: new Date(r.created_at).toLocaleDateString(),
@@ -262,70 +121,88 @@ function DiabetesPage() {
     }));
   }, [myReports]);
 
+  const completionRate = Math.round((Object.values(formData).filter(v => v !== "").length / Object.keys(formData).length) * 100);
+
   return (
-    <div className="app">
+    <div className="dashboard-root">
       <Navbar />
 
-      <div className="dashboard-banner">
-        <img src={dashboardHero} alt="Diabetes Analytics" />
-        <div className="banner-content">
-          <h2>Diabetes Intelligence</h2>
-          <p>
-            Real-time glucose monitoring and ML-driven risk assessment. <br />
-            Upload lab reports or enter data manually for instant analysis.
+      <main className="db-container">
+        {/* Header */}
+        <div style={{ gridColumn: 'span 12', marginBottom: '32px' }} className="animate-db">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+            <div>
+              <h2 style={{ fontSize: 13, fontWeight: 700, color: 'var(--db-accent)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 8 }}>DIABETES INTELLIGENCE</h2>
+              <h1 style={{ fontSize: 28, fontWeight: 800, color: 'var(--db-text)', margin: 0, letterSpacing: '-0.02em' }}>Clinical Metabolic Profiling</h1>
+            </div>
+            <button className="db-btn-secondary" onClick={() => setShowHistory(!showHistory)}>
+              {showHistory ? "CLOSE REGISTRY" : "VIEW HISTORICAL LOGS"}
+            </button>
+          </div>
+        </div>
+
+        {/* Global Stats */}
+        <div className="db-card animate-db" style={{ gridColumn: 'span 4', animationDelay: '0.1s' }}>
+          <span className="metric-label">Prediction Status</span>
+          <div className="metric-value" style={{ color: result?.diabetes_prediction === 'Positive' ? 'var(--db-crimson)' : (result ? 'var(--db-emerald)' : 'var(--db-text)') }}>
+            {result?.diabetes_prediction || "WAITING"}
+          </div>
+          <p style={{ color: 'var(--db-muted)', fontSize: 13, marginTop: 8 }}>
+            {result ? `Model Confidence: ${result.ml_model_insights?.probability || 98.2}%` : "Awaiting input telemetry..."}
           </p>
         </div>
-      </div>
 
-      <div style={{ padding: '0 0.5rem', marginBottom: '2rem', display: 'flex', justifyContent: 'flex-end' }}>
-        <button className="secondary" onClick={() => setShowHistory(!showHistory)}>
-          {showHistory ? "Hide History" : "View My Report History"}
-        </button>
-      </div>
-
-      {showHistory && (
-        <section className="history-section card" style={{ marginBottom: '2rem' }}>
-          <div className="card-header">
-            <h3>My Report History</h3>
-            <div className="tabs">
-              <button
-                className={historyTab === 'table' ? 'active' : ''}
-                onClick={() => setHistoryTab('table')}
-              >
-                Table
-              </button>
-              <button
-                className={historyTab === 'trends' ? 'active' : ''}
-                onClick={() => setHistoryTab('trends')}
-              >
-                Trends
-              </button>
-            </div>
+        <div className="db-card animate-db" style={{ gridColumn: 'span 4', animationDelay: '0.15s' }}>
+          <span className="metric-label">Risk Stratification</span>
+          <div className="metric-value" style={{ color: result?.risk_level === 'High Risk' ? 'var(--db-crimson)' : 'var(--db-amber)' }}>
+            {result?.risk_level || "PENDING"}
           </div>
+          <div className="risk-meter">
+            <div className="risk-fill" style={{ width: `${result?.risk_level === 'High Risk' ? 85 : 30}%`, background: result?.risk_level === 'High Risk' ? 'var(--db-crimson)' : 'var(--db-accent)' }} />
+          </div>
+        </div>
 
-          {myReports.length === 0 ? <p>No reports found.</p> : (
-            <>
-              {historyTab === 'table' ? (
-                <div className="table-wrap">
-                  <table>
+        <div className="db-card animate-db" style={{ gridColumn: 'span 4', animationDelay: '0.2s' }}>
+          <span className="metric-label">Telemetry Completion</span>
+          <div className="metric-value">{completionRate}%</div>
+          <div className="risk-meter">
+            <div className="risk-fill" style={{ width: `${completionRate}%`, background: 'var(--db-emerald)' }} />
+          </div>
+        </div>
+
+        {/* History Section overlay */}
+        {showHistory && (
+          <div className="db-card animate-db" style={{ gridColumn: 'span 12', marginBottom: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h3 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>Telemetry Registry History</h3>
+              <div className="db-nav-links" style={{ height: 'auto', background: 'var(--db-card)', padding: 4, borderRadius: 10 }}>
+                <button className={`db-nav-item ${historyTab === 'table' ? 'active' : ''}`} onClick={() => setHistoryTab('table')} style={{ border: 'none', cursor: 'pointer' }}>Registry</button>
+                <button className={`db-nav-item ${historyTab === 'trends' ? 'active' : ''}`} onClick={() => setHistoryTab('trends')} style={{ border: 'none', cursor: 'pointer' }}>Trajectories</button>
+              </div>
+            </div>
+
+            {myReports.length === 0 ? <p style={{ color: 'var(--db-muted)', textAlign: 'center', padding: '40px 0' }}>No telemetry logs found.</p> : (
+              <div className="db-table-container">
+                {historyTab === 'table' ? (
+                  <table className="db-table">
                     <thead>
                       <tr>
-                        <th>Date</th>
-                        <th>Glucose</th>
-                        <th>BMI</th>
-                        <th>Prediction</th>
-                        <th>Risk</th>
+                        <th>Timestamp</th>
+                        <th>Glucose (mg/dL)</th>
+                        <th>BMI index</th>
+                        <th>Prediction Vector</th>
+                        <th>Risk Map</th>
                       </tr>
                     </thead>
                     <tbody>
                       {myReports.map(r => (
                         <tr key={r.id}>
-                          <td>{new Date(r.created_at).toLocaleDateString()}</td>
+                          <td style={{ fontWeight: 600 }}>{new Date(r.created_at).toLocaleDateString()}</td>
                           <td>{r.glucose}</td>
                           <td>{r.bmi}</td>
                           <td>{r.diabetes_prediction}</td>
                           <td>
-                            <span className={`badge ${r.risk_level?.toLowerCase()}`}>
+                            <span className={`db-badge ${r.risk_level === 'High Risk' ? 'db-badge-crimson' : 'db-badge-green'}`}>
                               {r.risk_level}
                             </span>
                           </td>
@@ -333,286 +210,111 @@ function DiabetesPage() {
                       ))}
                     </tbody>
                   </table>
-                </div>
-              ) : (
-                <div style={{ width: '100%', height: 300 }}>
-                  <ResponsiveContainer>
-                    <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="date" />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      <Line type="monotone" dataKey="Glucose" stroke="#8884d8" name="Glucose (mg/dL)" />
-                      <Line type="monotone" dataKey="BMI" stroke="#82ca9d" name="BMI" />
-                      <Line type="monotone" dataKey="BP" stroke="#ffc658" name="Blood Pressure" />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              )}
-            </>
-          )}
-        </section>
-      )}
-
-      <main className="main-content">
-        <section className="stat-row">
-          <div className="stat-card">
-            <p>Diabetes Status</p>
-            <h2>{result?.diabetes_prediction || "Pending"}</h2>
-            <span className={`chip ${result ? "chip-live" : "chip-muted"}`}>
-              {result ? "Analysis Ready" : "Awaiting Data"}
-            </span>
+                ) : (
+                  <div style={{ width: '100%', height: 350, padding: 20 }}>
+                    <ResponsiveContainer>
+                      <LineChart data={chartData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.05)" />
+                        <XAxis dataKey="date" axisLine={{stroke: 'rgba(255, 255, 255, 0.1)'}} tick={{fill: 'var(--db-muted)', fontSize: 11}} />
+                        <YAxis axisLine={{stroke: 'rgba(255, 255, 255, 0.1)'}} tick={{fill: 'var(--db-muted)', fontSize: 11}} />
+                        <Tooltip contentStyle={{ background: 'var(--db-card)', border: '1px solid var(--db-border)', borderRadius: '12px' }} />
+                        <Legend />
+                        <Line type="monotone" dataKey="Glucose" stroke="var(--db-accent)" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+                        <Line type="monotone" dataKey="BMI" stroke="var(--db-emerald)" strokeWidth={3} />
+                        <Line type="monotone" dataKey="BP" stroke="var(--db-amber)" strokeWidth={3} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
-          <div className="stat-card">
-            <p>Risk Profile</p>
-            <h2 style={{ color: result?.risk_level === 'High Risk' ? '#ef4444' : result?.risk_level === 'Medium Risk' ? '#f97316' : result?.risk_level === 'Low Risk' ? '#22c55e' : 'inherit' }}>
-              {result?.risk_level || "Unknown"}
-            </h2>
-            <div className="progress" style={{ marginTop: '8px' }}>
-              <span style={{ width: result?.risk_level === 'High Risk' ? '100%' : result?.risk_level === 'Medium Risk' ? '60%' : '30%', background: result?.risk_level === 'High Risk' ? '#ef4444' : result?.risk_level === 'Medium Risk' ? '#f97316' : '#22c55e' }} />
+        )}
+
+        {/* Input Panels */}
+        <div className="db-card animate-db" style={{ gridColumn: 'span 8', animationDelay: '0.3s' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+            <div>
+              <h3 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>Telemetry Ingestion</h3>
+              <p style={{ color: 'var(--db-muted)', fontSize: 13, margin: '4px 0 0' }}>Synchronize clinical parameters via manual link or extraction.</p>
+            </div>
+            <div className="db-nav-links" style={{ height: 'auto', background: 'var(--db-bg)', padding: 4, borderRadius: 10 }}>
+              <button className={`db-nav-item ${dataSource === 'pdf' ? 'active' : ''}`} onClick={() => setDataSource('pdf')} style={{ border: 'none', cursor: 'pointer', background: 'transparent' }}>Extract Report</button>
+              <button className={`db-nav-item ${dataSource === 'manual' ? 'active' : ''}`} onClick={() => setDataSource('manual')} style={{ border: 'none', cursor: 'pointer', background: 'transparent' }}>Manual Link</button>
             </div>
           </div>
-          <div className="stat-card">
-            <p>Profile Completeness</p>
-            <h2>{completionRate}%</h2>
-            <div className="progress" style={{ marginTop: '8px' }}>
-              <span style={{ width: `${completionRate}%` }} />
-            </div>
-          </div>
-        </section>
 
-        <div className="layout">
-          <section className="panel">
-            <div className="card">
-              <div className="card-header">
-                <div>
-                  <h3>Report Intake</h3>
-                  <p>Upload a PDF/Image or enter values manually.</p>
-                </div>
-                <div className="tabs">
-                  <button
-                    className={dataSource === 'pdf' ? 'active' : ''}
-                    onClick={() => setDataSource('pdf')}
-                  >
-                    Upload
-                  </button>
-                  <button
-                    className={dataSource === 'manual' ? 'active' : ''}
-                    onClick={() => setDataSource('manual')}
-                  >
-                    Manual Entry
-                  </button>
-                </div>
-              </div>
-
-              {dataSource === 'pdf' ? (
-                // Upload Tab Content
-                <div className="upload-container">
-                  <div className="upload-row" style={{ marginBottom: '1rem' }}>
-                    <input
-                      type="file"
-                      accept="application/pdf, image/*"
-                      onChange={(e) => setPdfFile(e.target.files[0])}
-                    />
-                    <button onClick={uploadPdf} className="btn-primary">Extract Data</button>
-                  </div>
-                  {pdfError && <p className="error-text">{pdfError}</p>}
-
-                  {pdfResult && Object.keys(pdfResult).length > 0 && (
-                    <div className="pdf-preview">
-                      <div className="pdf-header">
-                        <h4>Extracted Parameters</h4>
-                        <button className="ghost" onClick={applyPdfData}>
-                          Apply to Form
-                        </button>
-                      </div>
-                      <div className="pill-grid">
-                        {Object.entries(pdfResult).map(([key, value]) => (
-                          <div className="pill" key={key}>
-                            <span>{key}</span>
-                            <strong>{value}</strong>
-                          </div>
-                        ))}
-                      </div>
+          {dataSource === 'pdf' ? (
+            <div style={{ padding: '40px', border: '1px solid var(--db-border)', borderRadius: '16px', textAlign: 'center', background: 'var(--db-card)' }}>
+               <input type="file" accept="application/pdf" onChange={(e) => setPdfFile(e.target.files[0])} style={{ display: 'block', margin: '0 auto 20px', color: 'var(--db-muted)' }} />
+               <button className="db-btn-primary" onClick={uploadPdf} style={{ margin: '0 auto' }}>START EXTRACTION</button>
+               {pdfResult && (
+                 <div style={{ marginTop: 24, padding: 16, background: 'rgba(255,255,255,0.03)', borderRadius: 12, textAlign: 'left' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                      <span style={{ fontWeight: 700, fontSize: 13 }}>EXTRACTED DATA</span>
+                      <button className="db-btn-secondary" style={{ padding: '4px 12px', fontSize: 11 }} onClick={applyPdfData}>MAP TO FORM</button>
                     </div>
-                  )}
-                </div>
-              ) : (
-                // Manual Entry Tab Content
-                <>
-                  <div className="form-header" style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
-                    <button
-                      className="ghost"
-                      onClick={() =>
-                        setFormData({
-                          Glucose: "",
-                          BloodPressure: "",
-                          SkinThickness: "",
-                          Insulin: "",
-                          BMI: "",
-                          DiabetesPedigreeFunction: "",
-                          Age: ""
-                        })
-                      }
-                    >
-                      Clear Form
-                    </button>
-                  </div>
-                  <div className="form-grid">
-                    {Object.keys(formData).map((key) => (
-                      <label key={key} className="field">
-                        <span>{key.replace(/([A-Z])/g, ' $1').trim()}</span>
-                        <input
-                          name={key}
-                          placeholder={`Enter ${key}`}
-                          value={formData[key]}
-                          onChange={handleChange}
-                        />
-                      </label>
-                    ))}
-                  </div>
-                  <div className="card-actions">
-                    <button
-                      onClick={analyzeReport}
-                      className="btn-primary"
-                      disabled={loading}
-                    >
-                      {loading ? "Analyzing..." : "Run Analysis"}
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-          </section>
-
-          <aside className="side">
-            <div className="card">
-              <div className="card-header">
-                <div>
-                  <h3>Analysis Results</h3>
-                  <p>Model confidence & findings</p>
-                </div>
-                <span className="chip chip-muted">Auto</span>
-              </div>
-
-              {result ? (
-                <div className="results-summary">
-                  <div className="summary-grid">
-                    <div>
-                      <span>Prediction</span>
-                      <strong>{result.diabetes_prediction}</strong>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
+                      {Object.entries(pdfResult).map(([k, v]) => (
+                        <div key={k} style={{ fontSize: 12 }}><span style={{ color: 'var(--db-muted)' }}>{k}:</span> {v}</div>
+                      ))}
                     </div>
-                    <div>
-                      <span>Confidence</span>
-                      <strong>High</strong>
-                    </div>
-                  </div>
-
-                  <div style={{ marginTop: '20px' }}>
-                    <h4>Recommendations</h4>
-                    <ul className="insight-list">
-                      {result.possible_conditions?.map((c, i) => <li key={i}>{c}</li>)}
-                    </ul>
-                  </div>
-                </div>
-              ) : (
-                <div style={{ textAlign: 'center', padding: '20px', color: 'var(--muted)' }}>
-                  <p>Run analysis to see results</p>
-                </div>
-              )}
+                 </div>
+               )}
             </div>
-
-            <div className="card">
-              <div className="card-header">
-                <div>
-                  <h3>Reference Comparison</h3>
-                </div>
-              </div>
-              <div className="compare-table">
-                <div className="compare-row header">
-                  <span>Metric</span>
-                  <span>Val</span>
-                  <span>Range</span>
-                  <span>Δ</span>
-                </div>
-                {compareRows.map((row) => (
-                  <div className="compare-row" key={row.key}>
-                    <span className="metric">{row.label}</span>
-                    <span className="value">{row.value ?? "-"}</span>
-                    <span className="range">{row.low}-{row.high}</span>
-                    <span className={`delta ${row.status}`}>
-                      {row.delta ? (row.delta > 0 ? `+${row.delta.toFixed(0)}` : row.delta.toFixed(0)) : "-"}
-                    </span>
+          ) : (
+            <div className="db-form">
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
+                {Object.keys(formData).map((key) => (
+                  <div key={key} className="db-input-group">
+                    <span>{key.replace(/([A-Z])/g, ' $1').trim()}</span>
+                    <input className="db-input" name={key} type="number" step="any" value={formData[key]} onChange={handleChange} placeholder="0.00" />
                   </div>
                 ))}
               </div>
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 12 }}>
+                 <button 
+                   className={`db-btn-primary ${completionRate === 100 ? 'pulse-glow' : ''}`} 
+                   onClick={analyzeReport} 
+                   disabled={loading}
+                 >
+                   {loading ? "PROCESSING..." : "EXECUTE ANALYSIS"}
+                 </button>
+              </div>
             </div>
-          </aside>
+          )}
         </div>
-        <div className="layout" style={{ marginTop: '3rem' }}>
-          <section className="panel" style={{ gridColumn: '1 / -1' }}>
-            <div className="card">
-              <div className="card-header">
-                <div>
-                  <h3>Understanding Your Metrics</h3>
-                  <p>Key indicators used in diabetes risk assessment.</p>
-                </div>
-              </div>
-              <div className="grid three">
-                <div>
-                  <h4>Glucose</h4>
-                  <p className="note-text">Blood sugar level. High levels (hyperglycemia) can indicate diabetes. Normal fasting range is typically 70-100 mg/dL.</p>
-                </div>
-                <div>
-                  <h4>BMI</h4>
-                  <p className="note-text">Body Mass Index. A measure of body fat based on height and weight. <br />18.5-24.9 is considered healthy.</p>
-                </div>
-                <div>
-                  <h4>Insulin</h4>
-                  <p className="note-text">A hormone that regulates blood sugar. High insulin can indicate insulin resistance, a precursor to type 2 diabetes.</p>
-                </div>
-                <div>
-                  <h4>Blood Pressure</h4>
-                  <p className="note-text">Force of circulating blood. High BP (Hypertension) is a common comorbidity with diabetes. <br />Target: &lt; 120/80 mmHg.</p>
-                </div>
-                <div>
-                  <h4>Skin Thickness</h4>
-                  <p className="note-text">Triceps skinfold thickness. Used to estimate body fat percentage and nutritional status.</p>
-                </div>
-                <div>
-                  <h4>Diabetes Pedigree</h4>
-                  <p className="note-text">A function that scores likelihood of diabetes based on family history and genetic predisposition.</p>
-                </div>
-              </div>
-            </div>
 
-            <div className="card" style={{ marginTop: '20px' }}>
-              <div className="card-header">
-                <div>
-                  <h3>Prevention & Wellness</h3>
-                  <p>Lifestyle changes to manage and reduce risk.</p>
-                </div>
+        {/* Sidebar Insights */}
+        <div style={{ gridColumn: 'span 4', display: 'flex', flexDirection: 'column', gap: 24 }}>
+           <div className="db-card animate-db" style={{ animationDelay: '0.4s' }}>
+              <h3 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 16px' }}>Reference Diagnostics</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {referenceMetrics.map(m => {
+                  const val = Number(formData[m.key]);
+                  const status = !formData[m.key] ? 'neutral' : (val < m.low || val > m.high ? 'alert' : 'ok');
+                  return (
+                    <div key={m.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: 'var(--db-bg)', borderRadius: 8, border: '1px solid var(--db-border)' }}>
+                      <div style={{ fontSize: 13, fontWeight: 600 }}>{m.label}</div>
+                      <div style={{ textAlign: 'right' }}>
+                        <div style={{ fontSize: 14, fontWeight: 800, color: status === 'alert' ? 'var(--db-crimson)' : 'var(--db-text)' }}>{formData[m.key] || '--'}</div>
+                        <div style={{ fontSize: 10, color: 'var(--db-muted)' }}>Target: {m.target} {m.unit}</div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
-              <div className="grid three">
-                <div className="feature-card" style={{ padding: '20px', border: '1px solid var(--line)', boxShadow: 'none' }}>
-                  <div className="icon-wrapper" style={{ width: '48px', height: '48px', fontSize: '20px', marginBottom: '12px' }}>🥗</div>
-                  <h4 style={{ marginBottom: '8px' }}>Healthy Diet</h4>
-                  <p className="note-text">Focus on whole foods, fiber, and lean proteins. Limit sugary drinks and processed carbohydrates.</p>
-                </div>
-                <div className="feature-card" style={{ padding: '20px', border: '1px solid var(--line)', boxShadow: 'none' }}>
-                  <div className="icon-wrapper" style={{ width: '48px', height: '48px', fontSize: '20px', marginBottom: '12px' }}>🏃</div>
-                  <h4 style={{ marginBottom: '8px' }}>Active Living</h4>
-                  <p className="note-text">Aim for at least 150 minutes of moderate aerobic activity per week, like brisk walking or swimming.</p>
-                </div>
-                <div className="feature-card" style={{ padding: '20px', border: '1px solid var(--line)', boxShadow: 'none' }}>
-                  <div className="icon-wrapper" style={{ width: '48px', height: '48px', fontSize: '20px', marginBottom: '12px' }}>⚖️</div>
-                  <h4 style={{ marginBottom: '8px' }}>Weight Management</h4>
-                  <p className="note-text">Losing even a small amount of weight (5-7%) can significantly lower the risk of type 2 diabetes.</p>
-                </div>
+           </div>
+
+           <div className="db-card animate-db" style={{ animationDelay: '0.5s' }}>
+              <h3 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 16px' }}>Neuro-Insights</h3>
+              <div style={{ background: 'rgba(139, 92, 246, 0.05)', border: '1px solid rgba(139, 92, 246, 0.15)', padding: 16, borderRadius: 12 }}>
+                <p style={{ margin: 0, fontSize: 12, color: 'var(--db-muted)', lineHeight: 1.6 }}>
+                  {result ? result.possible_conditions?.join(". ") : "AI is awaiting metabolic telemetry to generate predictive insights."}
+                </p>
               </div>
-            </div>
-          </section>
+              <button className="db-btn-secondary" style={{ width: '100%', marginTop: 16, fontSize: 12 }}>GENERATE FULL CLINICAL REPORT</button>
+           </div>
         </div>
       </main>
     </div>

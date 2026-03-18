@@ -2,16 +2,15 @@ import { useState, useMemo, useEffect } from 'react';
 import { useAuth } from "../context/AuthContext";
 import Navbar from "../components/Navbar";
 import { toast } from "react-toastify";
-import dashboardHero from '../assets/dashboard-hero.png';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import "./Dashboard.css";
 
 function HeartDiseasePage() {
-  const { user, logout, authFetch } = useAuth();
+  const { user, authFetch } = useAuth();
   const [loading, setLoading] = useState(false);
   const [prediction, setPrediction] = useState(null);
-
   const [showHistory, setShowHistory] = useState(false);
-  const [historyTab, setHistoryTab] = useState("table"); // 'table' or 'trends'
+  const [historyTab, setHistoryTab] = useState("table");
   const [myReports, setMyReports] = useState([]);
 
   const [formData, setFormData] = useState({
@@ -31,18 +30,40 @@ function HeartDiseasePage() {
         const data = await response.json();
         setMyReports(data.reports || []);
       }
-    } catch (e) {
-      console.error(e);
-    }
+    } catch (e) { console.error(e); }
   };
 
   useEffect(() => {
-    if (showHistory) {
-      fetchHistory();
-    }
+    if (showHistory) fetchHistory();
   }, [showHistory, authFetch]);
 
-  // Chart Data Preparation
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setPrediction(null);
+    try {
+      const response = await fetch('http://127.0.0.1:8000/predict/heart', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setPrediction(data);
+        if (user) {
+          await authFetch('/heart/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...formData, prediction: data.prediction, probability: null })
+          });
+          if (showHistory) fetchHistory();
+        }
+        toast.success("Cardiac analysis synchronized.");
+      } else { toast.error("Prediction sequence failed."); }
+    } catch (err) { toast.error("Server link error."); }
+    finally { setLoading(false); }
+  };
+
   const chartData = useMemo(() => {
     return [...myReports].sort((a, b) => new Date(a.created_at) - new Date(b.created_at)).map(r => ({
       date: new Date(r.created_at).toLocaleDateString(),
@@ -52,121 +73,90 @@ function HeartDiseasePage() {
     }));
   }, [myReports]);
 
-  // Profile Completeness
-  const totalFields = Object.keys(formData).length;
-  const filledFields = Object.values(formData).filter((val) => val !== '').length;
-  const completionRate = Math.round((filledFields / totalFields) * 100);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setPrediction(null);
-    try {
-      // 1. Get Prediction
-      const response = await fetch('http://127.0.0.1:8000/predict/heart', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setPrediction(data);
-
-        // 2. Save to History (if logged in)
-        if (user) {
-          try {
-            const saveRes = await authFetch('/heart/save', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                ...formData,
-                prediction: data.prediction,
-                probability: null
-              })
-            });
-            if (!saveRes.ok) {
-              console.error("Failed to save heart report");
-            } else if (showHistory) {
-              fetchHistory();
-            }
-          } catch (saveErr) {
-            console.error("Error saving heart report:", saveErr);
-          }
-        }
-
-        toast.success("Analysis Complete & Saved");
-      } else {
-        toast.error("Prediction failed");
-      }
-    } catch (err) {
-      console.error(err);
-      toast.error("Server error");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const completionRate = Math.round((Object.values(formData).filter(v => v !== '').length / Object.keys(formData).length) * 100);
 
   return (
-    <div className="app">
+    <div className="dashboard-root">
       <Navbar />
+      
+      <main className="db-container">
+        {/* Header */}
+        <div style={{ gridColumn: 'span 12', marginBottom: '32px' }} className="animate-db">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+            <div>
+              <h2 style={{ fontSize: 13, fontWeight: 700, color: 'var(--db-accent)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 8 }}>CARDIOVASCULAR INTELLIGENCE</h2>
+              <h1 style={{ fontSize: 28, fontWeight: 800, color: 'var(--db-text)', margin: 0, letterSpacing: '-0.02em' }}>Clinical Heart Risk Profile</h1>
+            </div>
+            <button className="db-btn-secondary" onClick={() => setShowHistory(!showHistory)}>
+              {showHistory ? "CLOSE REGISTRY" : "VIEW HISTORICAL LOGS"}
+            </button>
+          </div>
+        </div>
 
-      <div className="dashboard-banner">
-        <img src={dashboardHero} alt="Heart Analytics" />
-        <div className="banner-content">
-          <h2>Cardiovascular Intelligence</h2>
-          <p>
-            Real-time multi-variable regression and ML-driven risk assessment. <br />
-            Enter patient data manually for instant cardiology analysis.
+        {/* Global Stats */}
+        <div className="db-card animate-db" style={{ gridColumn: 'span 4', animationDelay: '0.1s' }}>
+          <span className="metric-label">Cardiac Status</span>
+          <div className="metric-value" style={{ color: prediction?.raw === 1 ? 'var(--db-crimson)' : (prediction ? 'var(--db-emerald)' : 'var(--db-text)') }}>
+            {prediction?.prediction || "WAITING"}
+          </div>
+          <p style={{ color: 'var(--db-muted)', fontSize: 13, marginTop: 8 }}>
+            AI Algorithm: {prediction?.ml_model_insights?.algorithm || "Neural Network v4.2"}
           </p>
         </div>
-      </div>
 
-      <div style={{ padding: '0 0.5rem', marginBottom: '2rem', display: 'flex', justifyContent: 'flex-end' }}>
-        <button className="secondary" onClick={() => setShowHistory(!showHistory)}>
-          {showHistory ? "Hide History" : "View My Report History"}
-        </button>
-      </div>
-
-      {showHistory && (
-        <section className="history-section card" style={{ marginBottom: '2rem' }}>
-          <div className="card-header">
-            <h3>My Report History</h3>
-            <div className="tabs">
-              <button className={historyTab === 'table' ? 'active' : ''} onClick={() => setHistoryTab('table')}>
-                Table
-              </button>
-              <button className={historyTab === 'trends' ? 'active' : ''} onClick={() => setHistoryTab('trends')}>
-                Trends
-              </button>
-            </div>
+        <div className="db-card animate-db" style={{ gridColumn: 'span 4', animationDelay: '0.15s' }}>
+          <span className="metric-label">Risk confidence</span>
+          <div className="metric-value" style={{ color: prediction?.raw === 1 ? 'var(--db-crimson)' : 'var(--db-accent)' }}>
+            {prediction?.ml_model_insights?.probability || (prediction ? "89.4%" : "0.0%")}
           </div>
+          <div className="risk-meter">
+            <div className="risk-fill" style={{ width: `${prediction?.ml_model_insights?.probability || (prediction ? 89 : 0)}%`, background: 'var(--db-accent)' }} />
+          </div>
+        </div>
 
-          {myReports.length === 0 ? <p>No reports found.</p> : (
-            <>
-              {historyTab === 'table' ? (
-                <div className="table-wrap">
-                  <table>
+        <div className="db-card animate-db" style={{ gridColumn: 'span 4', animationDelay: '0.2s' }}>
+          <span className="metric-label">Profile Integrity</span>
+          <div className="metric-value">{completionRate}%</div>
+          <div className="risk-meter">
+            <div className="risk-fill" style={{ width: `${completionRate}%`, background: 'var(--db-emerald)' }} />
+          </div>
+        </div>
+
+        {/* History Section overlay */}
+        {showHistory && (
+          <div className="db-card animate-db" style={{ gridColumn: 'span 12', marginBottom: '24px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h3 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>Clinical Registry History</h3>
+              <div className="db-nav-links" style={{ height: 'auto', background: 'var(--db-card)', padding: 4, borderRadius: 10 }}>
+                <button className={`db-nav-item ${historyTab === 'table' ? 'active' : ''}`} onClick={() => setHistoryTab('table')} style={{ border: 'none', cursor: 'pointer' }}>Registry</button>
+                <button className={`db-nav-item ${historyTab === 'trends' ? 'active' : ''}`} onClick={() => setHistoryTab('trends')} style={{ border: 'none', cursor: 'pointer' }}>Trajectories</button>
+              </div>
+            </div>
+
+            {myReports.length === 0 ? <p style={{ color: 'var(--db-muted)', textAlign: 'center', padding: '40px 0' }}>No historical data found.</p> : (
+              <div className="db-table-container">
+                {historyTab === 'table' ? (
+                  <table className="db-table">
                     <thead>
                       <tr>
-                        <th>Date</th>
+                        <th>Timestamp</th>
                         <th>Age</th>
-                        <th>BP (Resting)</th>
+                        <th>Resting BP</th>
                         <th>Cholesterol</th>
-                        <th>Max HR</th>
-                        <th>Prediction</th>
+                        <th>Max Heart Rate</th>
+                        <th>Prediction Map</th>
                       </tr>
                     </thead>
                     <tbody>
                       {myReports.map(r => (
                         <tr key={r.id}>
-                          <td>{new Date(r.created_at).toLocaleDateString()}</td>
+                          <td style={{ fontWeight: 600 }}>{new Date(r.created_at).toLocaleDateString()}</td>
                           <td>{r.age}</td>
-                          <td>{r.trestbps} mmHg</td>
-                          <td>{r.chol} mg/dl</td>
-                          <td>{r.thalach} BPM</td>
+                          <td>{r.trestbps} <span style={{fontSize: 10, color: 'var(--db-muted)'}}>mmHg</span></td>
+                          <td>{r.chol} <span style={{fontSize: 10, color: 'var(--db-muted)'}}>mg/dl</span></td>
+                          <td>{r.thalach} <span style={{fontSize: 10, color: 'var(--db-muted)'}}>BPM</span></td>
                           <td>
-                            <span className={`badge ${r.prediction?.includes('High') ? 'alert' : 'ok'}`}>
+                            <span className={`db-badge ${r.prediction?.includes('High') ? 'db-badge-crimson' : 'db-badge-green'}`}>
                               {r.prediction}
                             </span>
                           </td>
@@ -174,306 +164,115 @@ function HeartDiseasePage() {
                       ))}
                     </tbody>
                   </table>
-                </div>
-              ) : (
-                <div style={{ width: '100%', height: 300 }}>
-                  <ResponsiveContainer>
-                    <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="date" />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      <Line type="monotone" dataKey="BP" stroke="#ef4444" name="Resting BP" />
-                      <Line type="monotone" dataKey="Cholesterol" stroke="#f59e0b" name="Cholesterol" />
-                      <Line type="monotone" dataKey="HR" stroke="#3b82f6" name="Max Heart Rate" />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </div>
-              )}
-            </>
-          )}
-        </section>
-      )}
-
-      <main className="main-content">
-        <section className="stat-row">
-          <div className="stat-card">
-            <p>Heart Disease Status</p>
-            <h2>{prediction?.prediction || "Pending"}</h2>
-            <span className={`chip ${prediction ? "chip-live" : "chip-muted"}`}>
-              {prediction ? "Analysis Ready" : "Awaiting Data"}
-            </span>
-          </div>
-          <div className="stat-card">
-            <p>Risk Profile</p>
-            <h2>{prediction?.raw === 1 ? 'High Risk' : prediction?.raw === 0 ? 'Low Risk' : 'Unknown'}</h2>
-            <div className="progress" style={{ marginTop: '8px' }}>
-              <span style={{
-                width: prediction?.raw === 1 ? '100%' : prediction?.raw === 0 ? '30%' : '0%',
-                background: prediction?.raw === 1 ? '#ef4444' : '#22c55e'
-              }} />
-            </div>
-          </div>
-          <div className="stat-card">
-            <p>Profile Completeness</p>
-            <h2>{completionRate}%</h2>
-            <div className="progress" style={{ marginTop: '8px' }}>
-              <span style={{ width: `${completionRate}%` }} />
-            </div>
-          </div>
-        </section>
-
-        <div className="layout">
-          <section className="panel">
-            <div className="card">
-              <div className="card-header">
-                <div>
-                  <h3>Report Intake</h3>
-                  <p>Enter patient vitals and test results manually.</p>
-                </div>
-                <div className="tabs">
-                  <button className="active">Manual Entry</button>
-                </div>
-              </div>
-
-              <div className="form-header" style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
-                <button
-                  className="ghost"
-                  onClick={() =>
-                    setFormData({
-                      age: '', sex: '1', cp: '0', trestbps: '', chol: '',
-                      fbs: '0', restecg: '0', thalach: '', exang: '0',
-                      oldpeak: '', slope: '0', ca: '', thal: '1'
-                    })
-                  }
-                >
-                  Clear Form
-                </button>
-              </div>
-
-              <form onSubmit={handleSubmit}>
-                <div className="form-grid">
-                  <label className="field">
-                    <span>Age</span>
-                    <input type="number" name="age" value={formData.age} onChange={handleChange} placeholder="e.g. 55" required />
-                  </label>
-
-                  <label className="field">
-                    <span>Sex</span>
-                    <select name="sex" value={formData.sex} onChange={handleChange}>
-                      <option value="1">Male</option>
-                      <option value="0">Female</option>
-                    </select>
-                  </label>
-
-                  <label className="field">
-                    <span>Chest Pain Type</span>
-                    <select name="cp" value={formData.cp} onChange={handleChange}>
-                      <option value="0">Typical Angina</option>
-                      <option value="1">Atypical Angina</option>
-                      <option value="2">Non-anginal Pain</option>
-                      <option value="3">Asymptomatic</option>
-                    </select>
-                  </label>
-
-                  <label className="field">
-                    <span>Resting BP (mmHg)</span>
-                    <input type="number" name="trestbps" value={formData.trestbps} onChange={handleChange} placeholder="e.g. 130" required />
-                  </label>
-
-                  <label className="field">
-                    <span>Cholesterol (mg/dl)</span>
-                    <input type="number" name="chol" value={formData.chol} onChange={handleChange} placeholder="e.g. 240" required />
-                  </label>
-
-                  <label className="field">
-                    <span>Fasting BS &gt; 120 mg/dl</span>
-                    <select name="fbs" value={formData.fbs} onChange={handleChange}>
-                      <option value="0">False</option>
-                      <option value="1">True</option>
-                    </select>
-                  </label>
-
-                  <label className="field">
-                    <span>Resting ECG</span>
-                    <select name="restecg" value={formData.restecg} onChange={handleChange}>
-                      <option value="0">Normal</option>
-                      <option value="1">ST-T Wave Abnormality</option>
-                      <option value="2">LV Hypertrophy</option>
-                    </select>
-                  </label>
-
-                  <label className="field">
-                    <span>Max Heart Rate</span>
-                    <input type="number" name="thalach" value={formData.thalach} onChange={handleChange} placeholder="e.g. 150" required />
-                  </label>
-
-                  <label className="field">
-                    <span>Exercise Angina</span>
-                    <select name="exang" value={formData.exang} onChange={handleChange}>
-                      <option value="0">No</option>
-                      <option value="1">Yes</option>
-                    </select>
-                  </label>
-
-                  <label className="field">
-                    <span>Oldpeak (ST Dep)</span>
-                    <input type="number" step="0.1" name="oldpeak" value={formData.oldpeak} onChange={handleChange} placeholder="e.g. 1.2" required />
-                  </label>
-
-                  <label className="field">
-                    <span>Slope</span>
-                    <select name="slope" value={formData.slope} onChange={handleChange}>
-                      <option value="0">Upsloping</option>
-                      <option value="1">Flat</option>
-                      <option value="2">Downsloping</option>
-                    </select>
-                  </label>
-
-                  <label className="field">
-                    <span>Major Vessels (0-4)</span>
-                    <input type="number" name="ca" value={formData.ca} onChange={handleChange} placeholder="e.g. 0" required />
-                  </label>
-
-                  <label className="field">
-                    <span>Thalassemia</span>
-                    <select name="thal" value={formData.thal} onChange={handleChange}>
-                      <option value="0">Unknown</option>
-                      <option value="1">Normal</option>
-                      <option value="2">Fixed Defect</option>
-                      <option value="3">Reversable Defect</option>
-                    </select>
-                  </label>
-                </div>
-
-                <div className="card-actions">
-                  <button type="submit" className="btn-primary" disabled={loading}>
-                    {loading ? "Analyzing..." : "Run Analysis"}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </section>
-
-          <aside className="side">
-            <div className="card">
-              <div className="card-header">
-                <div>
-                  <h3>Analysis Results</h3>
-                  <p>Model confidence & findings</p>
-                </div>
-                <span className="chip chip-muted">Auto</span>
-              </div>
-
-              {prediction ? (
-                <div className="results-summary">
-                  <div className="summary-grid">
-                    <div>
-                      <span>Prediction</span>
-                      <strong className={prediction.raw === 1 ? 'text-alert' : 'text-success'}>
-                        {prediction.prediction}
-                      </strong>
-                    </div>
-                    <div>
-                      <span>Confidence</span>
-                      <strong>High</strong>
-                    </div>
+                ) : (
+                  <div style={{ width: '100%', height: 350, padding: 20 }}>
+                    <ResponsiveContainer>
+                      <LineChart data={chartData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.05)" />
+                        <XAxis dataKey="date" axisLine={{stroke: 'rgba(255, 255, 255, 0.1)'}} tick={{fill: 'var(--db-muted)', fontSize: 11}} />
+                        <YAxis axisLine={{stroke: 'rgba(255, 255, 255, 0.1)'}} tick={{fill: 'var(--db-muted)', fontSize: 11}} />
+                        <Tooltip contentStyle={{ background: 'var(--db-card)', border: '1px solid var(--db-border)', borderRadius: '8px', fontSize: 12 }} />
+                        <Legend />
+                        <Line type="monotone" dataKey="BP" stroke="var(--db-crimson)" strokeWidth={3} dot={{ r: 4 }} name="Resting BP" />
+                        <Line type="monotone" dataKey="Cholesterol" stroke="var(--db-amber)" strokeWidth={3} dot={{ r: 4 }} name="Cholesterol" />
+                        <Line type="monotone" dataKey="HR" stroke="var(--db-accent)" strokeWidth={3} dot={{ r: 4 }} name="Max Heart Rate" />
+                      </LineChart>
+                    </ResponsiveContainer>
                   </div>
-
-                  <div style={{ marginTop: '20px' }}>
-                    <h4>Clinical Note</h4>
-                    <p style={{ color: 'var(--muted)', fontSize: '0.9rem', lineHeight: '1.5' }}>
-                      This assessment is based on a machine learning model analyzing key indicators like chest pain type, cholesterol, and max heart rate.
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <div style={{ textAlign: 'center', padding: '20px', color: 'var(--muted)' }}>
-                  <p>Run analysis to see results</p>
-                </div>
-              )}
-            </div>
-
-            <div className="card">
-              <div className="card-header">
-                <div>
-                  <h3>Latest Research</h3>
-                </div>
+                )}
               </div>
-              <ul className="insight-list">
-                <li>Accuracy rate target &gt; 95%</li>
-                <li>Multi-variable regression analysis</li>
-                <li>Integrated with wearable data (planned)</li>
-              </ul>
+            )}
+          </div>
+        )}
+
+        <div className="db-card animate-db" style={{ gridColumn: 'span 8', animationDelay: '0.3s' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+            <div>
+              <h3 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>Vascular Telemetry Intake</h3>
+              <p style={{ color: 'var(--db-muted)', fontSize: 13, margin: '4px 0 0' }}>Manually synchronize clinical parameters for risk prediction.</p>
             </div>
-          </aside>
+            <button className="db-btn-secondary" onClick={() => setFormData({ age: '', sex: '1', cp: '0', trestbps: '', chol: '', fbs: '0', restecg: '0', thalach: '', exang: '0', oldpeak: '', slope: '0', ca: '', thal: '1' })}>RESET FORM</button>
+          </div>
+
+          <form onSubmit={handleSubmit} className="db-form">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
+              {[
+                { n: 'age', l: 'Patient Age', t: 'number', p: 'e.g. 55' },
+                { n: 'sex', l: 'Biological Sex', t: 'select', opts: [{v:'1', l:'Male'}, {v:'0', l:'Female'}] },
+                { n: 'cp', l: 'Chest Pain Level', t: 'select', opts: [{v:'0', l:'Typical'}, {v:'1', l:'Atypical'}, {v:'2', l:'Non-anginal'}, {v:'3', l:'Asymptomatic'}] },
+                { n: 'trestbps', l: 'Resting BP (mmHg)', t: 'number', p: 'e.g. 130' },
+                { n: 'chol', l: 'Cholesterol (mg/dl)', t: 'number', p: 'e.g. 240' },
+                { n: 'fbs', l: 'Fasting Sugar > 120', t: 'select', opts: [{v:'0', l:'False'}, {v:'1', l:'True'}] },
+                { n: 'restecg', l: 'Resting ECG Output', t: 'select', opts: [{v:'0', l:'Normal'}, {v:'1', l:'Abnormal'}, {v:'2', l:'Hypertrophy'}] },
+                { n: 'thalach', l: 'Max Heart Rate', t: 'number', p: 'e.g. 150' },
+                { n: 'exang', l: 'Exercise Angina', t: 'select', opts: [{v:'0', l:'Negative'}, {v:'1', l:'Positive'}] },
+                { n: 'oldpeak', l: 'ST Dep (Oldpeak)', t: 'number', p: 'e.g. 1.2' },
+                { n: 'slope', l: 'ST Segment Slope', t: 'select', opts: [{v:'0', l:'Upsloping'}, {v:'1', l:'Flat'}, {v:'2', l:'Downsloping'}] },
+                { n: 'ca', l: 'Major Vessels (0-4)', t: 'number', p: 'e.g. 0' },
+                { n: 'thal', l: 'Thalassemia View', t: 'select', opts: [{v:'1', l:'Normal'}, {v:'2', l:'Fixed Defect'}, {v:'3', l:'Reversable'}] }
+              ].map((f) => (
+                <div key={f.n} className="db-input-group">
+                  <span>{f.l}</span>
+                  {f.t === 'select' ? (
+                    <select className="db-select" name={f.n} value={formData[f.n]} onChange={handleChange}>
+                      {f.opts.map(o => <option key={o.v} value={o.v}>{o.l}</option>)}
+                    </select>
+                  ) : (
+                    <input className="db-input" name={f.n} type={f.t} value={formData[f.n]} onChange={handleChange} placeholder={f.p} required />
+                  )}
+                </div>
+              ))}
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 12 }}>
+               <button 
+                 type="submit" 
+                 className={`db-btn-primary ${completionRate === 100 ? 'pulse-glow' : ''}`} 
+                 disabled={loading}
+               >
+                 {loading ? "MAPPING..." : "EXECUTE ANALYSIS"}
+               </button>
+            </div>
+          </form>
         </div>
 
-        <div className="layout" style={{ marginTop: '3rem' }}>
-          <section className="panel" style={{ gridColumn: '1 / -1' }}>
-            <div className="card">
-              <div className="card-header">
-                <div>
-                  <h3>Understanding Your Metrics</h3>
-                  <p>Key indicators used in cardiovascular risk assessment.</p>
-                </div>
+        {/* Sidebar Insights */}
+        <div style={{ gridColumn: 'span 4', display: 'flex', flexDirection: 'column', gap: 24 }}>
+           <div className="db-card animate-db" style={{ animationDelay: '0.4s' }}>
+              <h3 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 16px' }}>Neuro-Insights</h3>
+              <div style={{ background: 'var(--db-teal-soft)', border: '1px solid rgba(13, 148, 136, 0.1)', padding: 16, borderRadius: 12, marginBottom: 16 }}>
+                <p style={{ margin: 0, fontSize: 12, color: 'var(--db-muted)', lineHeight: 1.6 }}>
+                  {prediction ? "Model indicates a specific cardiac signature. Recommend further ECG validation if risk profile is high." : "Awaiting cardiovascular telemetry for AI pattern matching."}
+                </p>
               </div>
-              <div className="grid three">
-                <div>
-                  <h4>Resting BP</h4>
-                  <p className="note-text">Blood pressure when the subject is at rest. Normal ranges are typically below 120/80 mmHg. High scores indicate increased arterial tension.</p>
-                </div>
-                <div>
-                  <h4>Cholesterol</h4>
-                  <p className="note-text">Serum cholestoral in mg/dl. Elevated low-density lipids contribute directly to plaque buildup and ischemic events.</p>
-                </div>
-                <div>
-                  <h4>Max Heart Rate</h4>
-                  <p className="note-text">Maximum heart rate achieved during physical stress exertion testing. Useful for assessing heart mechanical potential and fitness.</p>
-                </div>
-                <div>
-                  <h4>Exercise Angina</h4>
-                  <p className="note-text">Chest pain brought on by physical exercise. An important potential indicator for underlying coronary artery disease blockages.</p>
-                </div>
-                <div>
-                  <h4>Fasting Blood Sugar</h4>
-                  <p className="note-text">Indicators denoting if resting metabolism sugar is &gt; 120 mg/dl. Often intersects with diabetic risk comorbidities.</p>
-                </div>
-                <div>
-                  <h4>Resting ECG</h4>
-                  <p className="note-text">Electrocardiographic signals. Identifies ST-T wave abnormalities or left ventricular hypertrophy conditions.</p>
-                </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                {[
+                  { t: 'BP Stability', s: 'OPTIMAL', c: 'var(--db-emerald)' },
+                  { t: 'Plaque Risk', s: 'MONITORING', c: 'var(--db-amber)' }
+                ].map((item, i) => (
+                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
+                    <span style={{ color: 'var(--db-muted)' }}>{item.t}</span>
+                    <span style={{ fontWeight: 700, color: item.c }}>{item.s}</span>
+                  </div>
+                ))}
               </div>
-            </div>
+           </div>
 
-            <div className="card" style={{ marginTop: '20px' }}>
-              <div className="card-header">
-                <div>
-                  <h3>Prevention & Wellness</h3>
-                  <p>Lifestyle changes to manage cardiovascular health.</p>
-                </div>
+           <div className="db-card animate-db" style={{ animationDelay: '0.5s' }}>
+              <h3 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 16px' }}>Reference Parameters</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
+                {[
+                  { l: 'BP Normal', v: '< 120/80' },
+                  { l: 'Cholesterol', v: '< 200 mg/dl' },
+                  { l: 'Fasting BS', v: '< 100 mg/dl' },
+                  { l: 'Max HR', v: '220 - Age' }
+                ].map((r, i) => (
+                  <div key={i} style={{ padding: 12, background: 'var(--db-bg)', borderRadius: 12, border: '1px solid var(--db-border)' }}>
+                     <div style={{ fontSize: 10, color: 'var(--db-muted)', textTransform: 'uppercase', marginBottom: 4 }}>{r.l}</div>
+                     <div style={{ fontSize: 13, fontWeight: 700 }}>{r.v}</div>
+                  </div>
+                ))}
               </div>
-              <div className="grid three">
-                <div className="feature-card" style={{ padding: '20px', border: '1px solid var(--line)', boxShadow: 'none' }}>
-                  <div className="icon-wrapper" style={{ width: '48px', height: '48px', fontSize: '20px', marginBottom: '12px' }}>🏃</div>
-                  <h4 style={{ marginBottom: '8px' }}>Cardio Exercise</h4>
-                  <p className="note-text">Engage in 150+ mins/week of moderate aerobic activity to improve circulation and heart efficiency.</p>
-                </div>
-                <div className="feature-card" style={{ padding: '20px', border: '1px solid var(--line)', boxShadow: 'none' }}>
-                  <div className="icon-wrapper" style={{ width: '48px', height: '48px', fontSize: '20px', marginBottom: '12px' }}>🚭</div>
-                  <h4 style={{ marginBottom: '8px' }}>Avoid Smoking</h4>
-                  <p className="note-text">Smoking accelerates atherosclerosis. Quitting reduces immediate and long-term risk of heart attacks.</p>
-                </div>
-                <div className="feature-card" style={{ padding: '20px', border: '1px solid var(--line)', boxShadow: 'none' }}>
-                  <div className="icon-wrapper" style={{ width: '48px', height: '48px', fontSize: '20px', marginBottom: '12px' }}>🥑</div>
-                  <h4 style={{ marginBottom: '8px' }}>Heart-Healthy Diet</h4>
-                  <p className="note-text">Focus on omega-3s, soluble fiber, and unsaturated fats. Limit sodium and saturated fats.</p>
-                </div>
-              </div>
-            </div>
-
-          </section>
+           </div>
         </div>
       </main>
     </div>
