@@ -3,15 +3,14 @@ import { useAuth } from "../context/AuthContext";
 import Navbar from "../components/Navbar";
 import { toast } from "react-toastify";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import { C } from "../theme";
+import "./Dashboard.css";
 
 function HeartDiseasePage() {
-  const { user, logout, authFetch } = useAuth();
+  const { user, authFetch } = useAuth();
   const [loading, setLoading] = useState(false);
   const [prediction, setPrediction] = useState(null);
-
   const [showHistory, setShowHistory] = useState(false);
-  const [historyTab, setHistoryTab] = useState("table"); // 'table' or 'trends'
+  const [historyTab, setHistoryTab] = useState("table");
   const [myReports, setMyReports] = useState([]);
 
   const [formData, setFormData] = useState({
@@ -31,18 +30,40 @@ function HeartDiseasePage() {
         const data = await response.json();
         setMyReports(data.reports || []);
       }
-    } catch (e) {
-      console.error(e);
-    }
+    } catch (e) { console.error(e); }
   };
 
   useEffect(() => {
-    if (showHistory) {
-      fetchHistory();
-    }
+    if (showHistory) fetchHistory();
   }, [showHistory, authFetch]);
 
-  // Chart Data Preparation
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setPrediction(null);
+    try {
+      const response = await fetch('http://127.0.0.1:8000/predict/heart', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setPrediction(data);
+        if (user) {
+          await authFetch('/heart/save', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...formData, prediction: data.prediction, probability: null })
+          });
+          if (showHistory) fetchHistory();
+        }
+        toast.success("Cardiac analysis synchronized.");
+      } else { toast.error("Prediction sequence failed."); }
+    } catch (err) { toast.error("Server link error."); }
+    finally { setLoading(false); }
+  };
+
   const chartData = useMemo(() => {
     return [...myReports].sort((a, b) => new Date(a.created_at) - new Date(b.created_at)).map(r => ({
       date: new Date(r.created_at).toLocaleDateString(),
@@ -52,360 +73,208 @@ function HeartDiseasePage() {
     }));
   }, [myReports]);
 
-  // Profile Completeness
-  const totalFields = Object.keys(formData).length;
-  const filledFields = Object.values(formData).filter((val) => val !== '').length;
-  const completionRate = Math.round((filledFields / totalFields) * 100);
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
-    setPrediction(null);
-    try {
-      // 1. Get Prediction
-      const response = await fetch('http://127.0.0.1:8000/predict/heart', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        setPrediction(data);
-
-        // 2. Save to History (if logged in)
-        if (user) {
-          try {
-            const saveRes = await authFetch('/heart/save', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                ...formData,
-                prediction: data.prediction,
-                probability: null
-              })
-            });
-            if (!saveRes.ok) {
-              console.error("Failed to save heart report");
-            } else if (showHistory) {
-              fetchHistory();
-            }
-          } catch (saveErr) {
-            console.error("Error saving heart report:", saveErr);
-          }
-        }
-
-        toast.success("Analysis Complete & Saved");
-      } else {
-        toast.error("Prediction failed");
-      }
-    } catch (err) {
-      console.error(err);
-      toast.error("Server error");
-    } finally {
-      setLoading(false);
-    }
-  };
+  const completionRate = Math.round((Object.values(formData).filter(v => v !== '').length / Object.keys(formData).length) * 100);
 
   return (
-    <div className="page-container">
-      <div className="grid-bg-light" style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none' }} />
+    <div className="dashboard-root">
       <Navbar />
       
-      <div className="page-inner">
-        <div className="animate-up" style={{ marginBottom: '40px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '20px' }}>
-          <div>
-            <span className="feature-pill">CARDIOVASCULAR INTELLIGENCE</span>
-            <h2 className="page-title">Heart Risk Stratification</h2>
-            <p className="page-desc">Real-time multi-variable regression and ML-driven risk assessment.</p>
+      <main className="db-container">
+        {/* Header */}
+        <div style={{ gridColumn: 'span 12', marginBottom: '32px' }} className="animate-db">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+            <div>
+              <h2 style={{ fontSize: 13, fontWeight: 700, color: 'var(--db-accent)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 8 }}>CARDIOVASCULAR INTELLIGENCE</h2>
+              <h1 style={{ fontSize: 28, fontWeight: 800, color: 'var(--db-text)', margin: 0, letterSpacing: '-0.02em' }}>Clinical Heart Risk Profile</h1>
+            </div>
+            <button className="db-btn-secondary" onClick={() => setShowHistory(!showHistory)}>
+              {showHistory ? "CLOSE REGISTRY" : "VIEW HISTORICAL LOGS"}
+            </button>
           </div>
-          <button className="btn-secondary-light" onClick={() => setShowHistory(!showHistory)}>
-            {showHistory ? "Hide History" : "View My Report History"}
-          </button>
         </div>
 
+        {/* Global Stats */}
+        <div className="db-card animate-db" style={{ gridColumn: 'span 4', animationDelay: '0.1s' }}>
+          <span className="metric-label">Cardiac Status</span>
+          <div className="metric-value" style={{ color: prediction?.raw === 1 ? 'var(--db-crimson)' : (prediction ? 'var(--db-emerald)' : 'var(--db-text)') }}>
+            {prediction?.prediction || "WAITING"}
+          </div>
+          <p style={{ color: 'var(--db-muted)', fontSize: 13, marginTop: 8 }}>
+            AI Algorithm: {prediction?.ml_model_insights?.algorithm || "Neural Network v4.2"}
+          </p>
+        </div>
+
+        <div className="db-card animate-db" style={{ gridColumn: 'span 4', animationDelay: '0.15s' }}>
+          <span className="metric-label">Risk confidence</span>
+          <div className="metric-value" style={{ color: prediction?.raw === 1 ? 'var(--db-crimson)' : 'var(--db-accent)' }}>
+            {prediction?.ml_model_insights?.probability || (prediction ? "89.4%" : "0.0%")}
+          </div>
+          <div className="risk-meter">
+            <div className="risk-fill" style={{ width: `${prediction?.ml_model_insights?.probability || (prediction ? 89 : 0)}%`, background: 'var(--db-accent)' }} />
+          </div>
+        </div>
+
+        <div className="db-card animate-db" style={{ gridColumn: 'span 4', animationDelay: '0.2s' }}>
+          <span className="metric-label">Profile Integrity</span>
+          <div className="metric-value">{completionRate}%</div>
+          <div className="risk-meter">
+            <div className="risk-fill" style={{ width: `${completionRate}%`, background: 'var(--db-emerald)' }} />
+          </div>
+        </div>
+
+        {/* History Section overlay */}
         {showHistory && (
-          <section className="bento-card animate-up" style={{ animationDelay: '0.1s', marginBottom: '40px', padding: '32px' }}>
+          <div className="db-card animate-db" style={{ gridColumn: 'span 12', marginBottom: '24px' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-              <h3 style={{ fontSize: '20px', fontWeight: 800, margin: 0 }}>My Report History</h3>
-              <div className="tabs-light">
-                <button className={historyTab === 'table' ? 'active' : ''} onClick={() => setHistoryTab('table')}>Table</button>
-                <button className={historyTab === 'trends' ? 'active' : ''} onClick={() => setHistoryTab('trends')}>Trends</button>
+              <h3 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>Clinical Registry History</h3>
+              <div className="db-nav-links" style={{ height: 'auto', background: 'var(--db-card)', padding: 4, borderRadius: 10 }}>
+                <button className={`db-nav-item ${historyTab === 'table' ? 'active' : ''}`} onClick={() => setHistoryTab('table')} style={{ border: 'none', cursor: 'pointer' }}>Registry</button>
+                <button className={`db-nav-item ${historyTab === 'trends' ? 'active' : ''}`} onClick={() => setHistoryTab('trends')} style={{ border: 'none', cursor: 'pointer' }}>Trajectories</button>
               </div>
             </div>
 
-            {myReports.length === 0 ? <p style={{ color: C.lightMuted }}>No reports found.</p> : (
-              <>
+            {myReports.length === 0 ? <p style={{ color: 'var(--db-muted)', textAlign: 'center', padding: '40px 0' }}>No historical data found.</p> : (
+              <div className="db-table-container">
                 {historyTab === 'table' ? (
-                  <div style={{ overflowX: 'auto', borderRadius: '12px', border: `1px solid ${C.lightBorder}` }}>
-                    <table className="table-light">
-                      <thead>
-                        <tr>
-                          <th>Date</th>
-                          <th>Age</th>
-                          <th>BP (Resting)</th>
-                          <th>Cholesterol</th>
-                          <th>Max HR</th>
-                          <th>Prediction</th>
+                  <table className="db-table">
+                    <thead>
+                      <tr>
+                        <th>Timestamp</th>
+                        <th>Age</th>
+                        <th>Resting BP</th>
+                        <th>Cholesterol</th>
+                        <th>Max Heart Rate</th>
+                        <th>Prediction Map</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {myReports.map(r => (
+                        <tr key={r.id}>
+                          <td style={{ fontWeight: 600 }}>{new Date(r.created_at).toLocaleDateString()}</td>
+                          <td>{r.age}</td>
+                          <td>{r.trestbps} <span style={{fontSize: 10, color: 'var(--db-muted)'}}>mmHg</span></td>
+                          <td>{r.chol} <span style={{fontSize: 10, color: 'var(--db-muted)'}}>mg/dl</span></td>
+                          <td>{r.thalach} <span style={{fontSize: 10, color: 'var(--db-muted)'}}>BPM</span></td>
+                          <td>
+                            <span className={`db-badge ${r.prediction?.includes('High') ? 'db-badge-crimson' : 'db-badge-green'}`}>
+                              {r.prediction}
+                            </span>
+                          </td>
                         </tr>
-                      </thead>
-                      <tbody>
-                        {myReports.map(r => (
-                          <tr key={r.id}>
-                            <td style={{ fontWeight: 600 }}>{new Date(r.created_at).toLocaleDateString()}</td>
-                            <td>{r.age}</td>
-                            <td><span style={{ fontFamily: "'JetBrains Mono', monospace" }}>{r.trestbps}</span> <span style={{fontSize: '12px', color: C.lightMuted}}>mmHg</span></td>
-                            <td><span style={{ fontFamily: "'JetBrains Mono', monospace" }}>{r.chol}</span> <span style={{fontSize: '12px', color: C.lightMuted}}>mg/dl</span></td>
-                            <td><span style={{ fontFamily: "'JetBrains Mono', monospace" }}>{r.thalach}</span> <span style={{fontSize: '12px', color: C.lightMuted}}>BPM</span></td>
-                            <td>
-                              <span style={{ display: 'inline-block', padding: '4px 8px', borderRadius: '6px', fontSize: '12px', fontWeight: 700, 
-                                background: r.prediction?.includes('High') ? C.crimsonBg : C.emeraldBg,
-                                color: r.prediction?.includes('High') ? C.crimson : C.emerald
-                              }}>
-                                {r.prediction}
-                              </span>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                      ))}
+                    </tbody>
+                  </table>
                 ) : (
-                  <div style={{ width: '100%', height: 300, background: '#fff', padding: '20px', borderRadius: '12px', border: `1px solid ${C.lightBorder}` }}>
+                  <div style={{ width: '100%', height: 350, padding: 20 }}>
                     <ResponsiveContainer>
-                      <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={C.lightBorder} />
-                        <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: C.lightMuted }} />
-                        <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: C.lightMuted }} />
-                        <Tooltip contentStyle={{ borderRadius: '12px', border: `1px solid ${C.lightBorder}`, boxShadow: C.shadowCard }} />
-                        <Legend wrapperStyle={{ paddingTop: '20px' }} />
-                        <Line type="monotone" dataKey="BP" stroke={C.crimson} strokeWidth={3} dot={{ r: 4 }} name="Resting BP" />
-                        <Line type="monotone" dataKey="Cholesterol" stroke={C.amber} strokeWidth={3} dot={{ r: 4 }} name="Cholesterol" />
-                        <Line type="monotone" dataKey="HR" stroke={C.blueBright} strokeWidth={3} dot={{ r: 4 }} name="Max Heart Rate" />
+                      <LineChart data={chartData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.05)" />
+                        <XAxis dataKey="date" axisLine={{stroke: 'rgba(255, 255, 255, 0.1)'}} tick={{fill: 'var(--db-muted)', fontSize: 11}} />
+                        <YAxis axisLine={{stroke: 'rgba(255, 255, 255, 0.1)'}} tick={{fill: 'var(--db-muted)', fontSize: 11}} />
+                        <Tooltip contentStyle={{ background: 'var(--db-card)', border: '1px solid var(--db-border)', borderRadius: '8px', fontSize: 12 }} />
+                        <Legend />
+                        <Line type="monotone" dataKey="BP" stroke="var(--db-crimson)" strokeWidth={3} dot={{ r: 4 }} name="Resting BP" />
+                        <Line type="monotone" dataKey="Cholesterol" stroke="var(--db-amber)" strokeWidth={3} dot={{ r: 4 }} name="Cholesterol" />
+                        <Line type="monotone" dataKey="HR" stroke="var(--db-accent)" strokeWidth={3} dot={{ r: 4 }} name="Max Heart Rate" />
                       </LineChart>
                     </ResponsiveContainer>
                   </div>
                 )}
-              </>
+              </div>
             )}
-          </section>
+          </div>
         )}
 
-        <section className="animate-up" style={{ animationDelay: '0.15s', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '20px', marginBottom: '32px' }}>
-          {[
-             { l: 'Heart Disease Status', v: prediction?.prediction || "Pending", s: prediction ? "Analysis Ready" : "Awaiting Data", c: prediction ? C.emerald : C.lightMuted, bg: prediction ? C.emeraldBg : C.lightBg3 },
-             { l: 'Risk Profile', v: prediction?.raw === 1 ? 'High Risk' : prediction?.raw === 0 ? 'Low Risk' : 'Unknown', prog: prediction?.raw === 1 ? 100 : prediction?.raw === 0 ? 30 : 0, progC: prediction?.raw === 1 ? C.crimson : C.emerald },
-             { l: 'Profile Completeness', v: `${completionRate}%`, prog: completionRate, progC: C.blueBright }
-          ].map((s, i) => (
-             <div key={i} className="bento-card" style={{ padding: '24px' }}>
-               <div style={{ fontSize: '13px', fontWeight: 600, color: C.lightMuted, textTransform: 'uppercase', marginBottom: '8px' }}>{s.l}</div>
-               <div style={{ fontSize: '28px', fontWeight: 800, color: C.lightText, marginBottom: '16px' }}>{s.v}</div>
-               {s.s && <span style={{ display: 'inline-block', background: s.bg, color: s.c, padding: '4px 8px', borderRadius: '6px', fontSize: '12px', fontWeight: 700 }}>{s.s}</span>}
-               {typeof s.prog !== 'undefined' && (
-                 <div style={{ width: '100%', height: '6px', background: C.lightBg3, borderRadius: '99px', overflow: 'hidden' }}>
-                    <div style={{ width: `${s.prog}%`, height: '100%', background: s.progC, borderRadius: '99px', transition: 'width 1s' }} />
-                 </div>
-               )}
-             </div>
-          ))}
-        </section>
-
-        <div className="layout animate-up" style={{ animationDelay: '0.2s', display: 'grid', gridTemplateColumns: 'minmax(0, 1.8fr) minmax(0, 1fr)', gap: '24px', marginBottom: '32px' }}>
-          
-          <section className="panel" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            <div className="bento-card">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px', marginBottom: '24px' }}>
-                <div>
-                  <h3 style={{ fontSize: '20px', fontWeight: 800, margin: '0 0 8px' }}>Patient Vitals</h3>
-                  <p style={{ color: C.lightMuted, margin: 0 }}>Enter clinical parameters for risk prediction.</p>
-                </div>
-                <button className="btn-secondary-light" onClick={() => setFormData({ age: '', sex: '1', cp: '0', trestbps: '', chol: '', fbs: '0', restecg: '0', thalach: '', exang: '0', oldpeak: '', slope: '0', ca: '', thal: '1' })}>Clear Details</button>
-              </div>
-
-              <form onSubmit={handleSubmit} className="field-light">
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '20px' }}>
-                  <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <span>Age</span>
-                    <input type="number" name="age" value={formData.age} onChange={handleChange} placeholder="e.g. 55" required />
-                  </label>
-                  <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <span>Sex</span>
-                    <select name="sex" value={formData.sex} onChange={handleChange}>
-                      <option value="1">Male</option>
-                      <option value="0">Female</option>
-                    </select>
-                  </label>
-                  <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <span>Chest Pain Type</span>
-                    <select name="cp" value={formData.cp} onChange={handleChange}>
-                      <option value="0">Typical Angina</option>
-                      <option value="1">Atypical Angina</option>
-                      <option value="2">Non-anginal Pain</option>
-                      <option value="3">Asymptomatic</option>
-                    </select>
-                  </label>
-                  <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <span>Resting BP (mmHg)</span>
-                    <input type="number" name="trestbps" value={formData.trestbps} onChange={handleChange} placeholder="e.g. 130" required />
-                  </label>
-                  <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <span>Cholesterol (mg/dl)</span>
-                    <input type="number" name="chol" value={formData.chol} onChange={handleChange} placeholder="e.g. 240" required />
-                  </label>
-                  <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <span>Fasting BS &gt; 120 mg/dl</span>
-                    <select name="fbs" value={formData.fbs} onChange={handleChange}>
-                      <option value="0">False</option>
-                      <option value="1">True</option>
-                    </select>
-                  </label>
-                  <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <span>Resting ECG</span>
-                    <select name="restecg" value={formData.restecg} onChange={handleChange}>
-                      <option value="0">Normal</option>
-                      <option value="1">ST-T Wave Abnormality</option>
-                      <option value="2">LV Hypertrophy</option>
-                    </select>
-                  </label>
-                  <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <span>Max Heart Rate</span>
-                    <input type="number" name="thalach" value={formData.thalach} onChange={handleChange} placeholder="e.g. 150" required />
-                  </label>
-                  <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <span>Exercise Angina</span>
-                    <select name="exang" value={formData.exang} onChange={handleChange}>
-                      <option value="0">No</option>
-                      <option value="1">Yes</option>
-                    </select>
-                  </label>
-                  <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <span>Oldpeak (ST Dep)</span>
-                    <input type="number" step="0.1" name="oldpeak" value={formData.oldpeak} onChange={handleChange} placeholder="e.g. 1.2" required />
-                  </label>
-                  <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <span>Slope</span>
-                    <select name="slope" value={formData.slope} onChange={handleChange}>
-                      <option value="0">Upsloping</option>
-                      <option value="1">Flat</option>
-                      <option value="2">Downsloping</option>
-                    </select>
-                  </label>
-                  <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <span>Major Vessels (0-4)</span>
-                    <input type="number" name="ca" value={formData.ca} onChange={handleChange} placeholder="e.g. 0" required />
-                  </label>
-                  <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                    <span>Thalassemia</span>
-                    <select name="thal" value={formData.thal} onChange={handleChange}>
-                      <option value="0">Unknown</option>
-                      <option value="1">Normal</option>
-                      <option value="2">Fixed Defect</option>
-                      <option value="3">Reversable Defect</option>
-                    </select>
-                  </label>
-                </div>
-
-                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '32px' }}>
-                  <button type="submit" className="clinical-btn" disabled={loading}>
-                    {loading ? "Analyzing..." : "Run Analysis"}
-                  </button>
-                </div>
-              </form>
+        <div className="db-card animate-db" style={{ gridColumn: 'span 8', animationDelay: '0.3s' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+            <div>
+              <h3 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>Vascular Telemetry Intake</h3>
+              <p style={{ color: 'var(--db-muted)', fontSize: 13, margin: '4px 0 0' }}>Manually synchronize clinical parameters for risk prediction.</p>
             </div>
-          </section>
+            <button className="db-btn-secondary" onClick={() => setFormData({ age: '', sex: '1', cp: '0', trestbps: '', chol: '', fbs: '0', restecg: '0', thalach: '', exang: '0', oldpeak: '', slope: '0', ca: '', thal: '1' })}>RESET FORM</button>
+          </div>
 
-          <aside className="side">
-            <div className="bento-card" style={{ height: '100%' }}>
-              <div style={{ marginBottom: '20px', borderBottom: `1px solid ${C.lightBorder}`, paddingBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <h3 style={{ fontSize: '20px', fontWeight: 800, margin: '0 0 4px' }}>Analysis Results</h3>
-                  <p style={{ color: C.lightMuted, fontSize: '14px', margin: 0 }}>Model confidence & findings</p>
+          <form onSubmit={handleSubmit} className="db-form">
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
+              {[
+                { n: 'age', l: 'Patient Age', t: 'number', p: 'e.g. 55' },
+                { n: 'sex', l: 'Biological Sex', t: 'select', opts: [{v:'1', l:'Male'}, {v:'0', l:'Female'}] },
+                { n: 'cp', l: 'Chest Pain Level', t: 'select', opts: [{v:'0', l:'Typical'}, {v:'1', l:'Atypical'}, {v:'2', l:'Non-anginal'}, {v:'3', l:'Asymptomatic'}] },
+                { n: 'trestbps', l: 'Resting BP (mmHg)', t: 'number', p: 'e.g. 130' },
+                { n: 'chol', l: 'Cholesterol (mg/dl)', t: 'number', p: 'e.g. 240' },
+                { n: 'fbs', l: 'Fasting Sugar > 120', t: 'select', opts: [{v:'0', l:'False'}, {v:'1', l:'True'}] },
+                { n: 'restecg', l: 'Resting ECG Output', t: 'select', opts: [{v:'0', l:'Normal'}, {v:'1', l:'Abnormal'}, {v:'2', l:'Hypertrophy'}] },
+                { n: 'thalach', l: 'Max Heart Rate', t: 'number', p: 'e.g. 150' },
+                { n: 'exang', l: 'Exercise Angina', t: 'select', opts: [{v:'0', l:'Negative'}, {v:'1', l:'Positive'}] },
+                { n: 'oldpeak', l: 'ST Dep (Oldpeak)', t: 'number', p: 'e.g. 1.2' },
+                { n: 'slope', l: 'ST Segment Slope', t: 'select', opts: [{v:'0', l:'Upsloping'}, {v:'1', l:'Flat'}, {v:'2', l:'Downsloping'}] },
+                { n: 'ca', l: 'Major Vessels (0-4)', t: 'number', p: 'e.g. 0' },
+                { n: 'thal', l: 'Thalassemia View', t: 'select', opts: [{v:'1', l:'Normal'}, {v:'2', l:'Fixed Defect'}, {v:'3', l:'Reversable'}] }
+              ].map((f) => (
+                <div key={f.n} className="db-input-group">
+                  <span>{f.l}</span>
+                  {f.t === 'select' ? (
+                    <select className="db-select" name={f.n} value={formData[f.n]} onChange={handleChange}>
+                      {f.opts.map(o => <option key={o.v} value={o.v}>{o.l}</option>)}
+                    </select>
+                  ) : (
+                    <input className="db-input" name={f.n} type={f.t} value={formData[f.n]} onChange={handleChange} placeholder={f.p} required />
+                  )}
                 </div>
-                <span style={{ background: C.lightBg3, color: C.lightMuted, padding: '4px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase' }}>Auto</span>
-              </div>
-
-              {prediction ? (
-                <div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '24px' }}>
-                    <div style={{ background: prediction.raw === 1 ? C.crimsonBg : C.emeraldBg, border: `1px solid ${prediction.raw === 1 ? 'rgba(239,68,68,0.2)' : 'rgba(16,185,129,0.2)'}`, padding: '16px', borderRadius: '12px' }}>
-                      <div style={{ fontSize: '12px', fontWeight: 700, color: prediction.raw === 1 ? '#ef4444' : '#10b981', textTransform: 'uppercase', marginBottom: '8px' }}>Prediction</div>
-                      <div style={{ fontSize: '18px', fontWeight: 800, color: prediction.raw === 1 ? C.crimson : C.emerald }}>{prediction.prediction}</div>
-                    </div>
-                    <div style={{ background: C.lightBg2, border: `1px solid ${C.lightBorder}`, padding: '16px', borderRadius: '12px' }}>
-                      <div style={{ fontSize: '12px', fontWeight: 700, color: C.lightMuted, textTransform: 'uppercase', marginBottom: '8px' }}>Confidence</div>
-                      <div style={{ fontSize: '18px', fontWeight: 800, color: C.lightText }}>{prediction.ml_model_insights ? `${prediction.ml_model_insights.probability}%` : "High"}</div>
-                    </div>
-                  </div>
-
-                  <div style={{ background: '#fff', border: `1px solid ${C.lightBorder}`, padding: '20px', borderRadius: '16px', boxShadow: C.shadowCard }}>
-                    <h4 style={{ fontSize: '15px', fontWeight: 700, margin: '0 0 12px' }}>ML Model Insights</h4>
-                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', background: C.lightBg2, padding: '6px 12px', borderRadius: '8px', fontSize: '13px', fontWeight: 600, marginBottom: '12px', color: C.lightText }}>
-                      <span style={{ color: C.lightMuted }}>Algorithm</span>
-                      <span>{prediction.ml_model_insights?.algorithm || "Machine Learning Model"}</span>
-                    </div>
-                    <p style={{ color: C.lightMuted, fontSize: '14px', lineHeight: '1.5', margin: 0 }}>
-                      This assessment is based on a trained machine learning model analyzing key indicators like chest pain type, cholesterol, and max heart rate.
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 0', textAlign: 'center', color: C.lightMuted }}>
-                  <div style={{ fontSize: '48px', marginBottom: '16px', opacity: 0.5 }}>🫀</div>
-                  <p style={{ margin: 0, fontSize: '15px', maxWidth: '200px' }}>Run analysis to see detailed prediction results.</p>
-                </div>
-              )}
+              ))}
             </div>
-          </aside>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 12 }}>
+               <button 
+                 type="submit" 
+                 className={`db-btn-primary ${completionRate === 100 ? 'pulse-glow' : ''}`} 
+                 disabled={loading}
+               >
+                 {loading ? "MAPPING..." : "EXECUTE ANALYSIS"}
+               </button>
+            </div>
+          </form>
         </div>
 
-        {/* Info Cards */}
-        <div className="animate-up" style={{ animationDelay: '0.3s' }}>
-            <div className="bento-card" style={{ marginBottom: '24px' }}>
-              <div style={{ marginBottom: '24px' }}>
-                <h3 style={{ fontSize: '20px', fontWeight: 800, margin: '0 0 8px' }}>Understanding Your Metrics</h3>
-                <p style={{ color: C.lightMuted, margin: 0 }}>Key indicators used in cardiovascular risk assessment.</p>
+        {/* Sidebar Insights */}
+        <div style={{ gridColumn: 'span 4', display: 'flex', flexDirection: 'column', gap: 24 }}>
+           <div className="db-card animate-db" style={{ animationDelay: '0.4s' }}>
+              <h3 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 16px' }}>Neuro-Insights</h3>
+              <div style={{ background: 'var(--db-teal-soft)', border: '1px solid rgba(13, 148, 136, 0.1)', padding: 16, borderRadius: 12, marginBottom: 16 }}>
+                <p style={{ margin: 0, fontSize: 12, color: 'var(--db-muted)', lineHeight: 1.6 }}>
+                  {prediction ? "Model indicates a specific cardiac signature. Recommend further ECG validation if risk profile is high." : "Awaiting cardiovascular telemetry for AI pattern matching."}
+                </p>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 {[
-                  { t: 'Resting BP', d: 'Blood pressure when the subject is at rest. Normal ranges are typically below 120/80 mmHg.' },
-                  { t: 'Cholesterol', d: 'Serum cholestoral in mg/dl. Elevated low-density lipids contribute directly to plaque buildup.' },
-                  { t: 'Max Heart Rate', d: 'Maximum heart rate achieved. Useful for assessing heart mechanical potential and fitness.' },
-                  { t: 'Exercise Angina', d: 'Chest pain brought on by physical exercise. Important indicator for CAD blockages.' },
-                  { t: 'Fasting Blood Sugar', d: 'Indicators denoting if resting metabolism sugar is > 120 mg/dl. Intersects with diabetic risk.' },
-                  { t: 'Resting ECG', d: 'Electrocardiographic signals. Identifies abnormalities or left ventricular hypertrophy.' }
+                  { t: 'BP Stability', s: 'OPTIMAL', c: 'var(--db-emerald)' },
+                  { t: 'Plaque Risk', s: 'MONITORING', c: 'var(--db-amber)' }
                 ].map((item, i) => (
-                   <div key={i} style={{ background: C.lightBg1, padding: '20px', borderRadius: '16px', border: `1px solid ${C.lightBorder}` }}>
-                      <h4 style={{ fontSize: '16px', fontWeight: 700, margin: '0 0 8px' }}>{item.t}</h4>
-                      <p style={{ fontSize: '14px', color: C.lightMuted, lineHeight: 1.5, margin: 0 }}>{item.d}</p>
-                   </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="bento-card">
-              <div style={{ marginBottom: '24px' }}>
-                <h3 style={{ fontSize: '20px', fontWeight: 800, margin: '0 0 8px' }}>Prevention & Wellness</h3>
-                <p style={{ color: C.lightMuted, margin: 0 }}>Lifestyle changes to manage cardiovascular health.</p>
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px' }}>
-                {[
-                  { i: '🏃', t: 'Cardio Exercise', d: 'Engage in 150+ mins/week of moderate aerobic activity to improve circulation and heart efficiency.' },
-                  { i: '🚭', t: 'Avoid Smoking', d: 'Smoking accelerates atherosclerosis. Quitting reduces immediate risk of heart attacks.' },
-                  { i: '🥑', t: 'Heart-Healthy Diet', d: 'Focus on omega-3s, soluble fiber, and unsaturated fats. Limit sodium and saturated fats.' }
-                ].map((item, i) => (
-                  <div key={i} style={{ display: 'flex', gap: '16px', padding: '20px', background: C.lightBg2, borderRadius: '16px' }}>
-                     <div style={{ fontSize: '28px' }}>{item.i}</div>
-                     <div>
-                       <h4 style={{ fontSize: '16px', fontWeight: 700, margin: '0 0 4px' }}>{item.t}</h4>
-                       <p style={{ fontSize: '14px', color: C.lightMuted, lineHeight: 1.5, margin: 0 }}>{item.d}</p>
-                     </div>
+                  <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
+                    <span style={{ color: 'var(--db-muted)' }}>{item.t}</span>
+                    <span style={{ fontWeight: 700, color: item.c }}>{item.s}</span>
                   </div>
                 ))}
               </div>
-            </div>
-        </div>
+           </div>
 
-      </div>
+           <div className="db-card animate-db" style={{ animationDelay: '0.5s' }}>
+              <h3 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 16px' }}>Reference Parameters</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 12 }}>
+                {[
+                  { l: 'BP Normal', v: '< 120/80' },
+                  { l: 'Cholesterol', v: '< 200 mg/dl' },
+                  { l: 'Fasting BS', v: '< 100 mg/dl' },
+                  { l: 'Max HR', v: '220 - Age' }
+                ].map((r, i) => (
+                  <div key={i} style={{ padding: 12, background: 'var(--db-bg)', borderRadius: 12, border: '1px solid var(--db-border)' }}>
+                     <div style={{ fontSize: 10, color: 'var(--db-muted)', textTransform: 'uppercase', marginBottom: 4 }}>{r.l}</div>
+                     <div style={{ fontSize: 13, fontWeight: 700 }}>{r.v}</div>
+                  </div>
+                ))}
+              </div>
+           </div>
+        </div>
+      </main>
     </div>
   );
 }

@@ -13,13 +13,13 @@ export const C = {
   heroCard: '#0f172a', heroBorder: 'rgba(255,255,255,0.1)',
   heroText: '#f8fafc', heroMuted: '#94a3b8',
 
-  // Light Theme (Content)
-  lightBg1: '#f8fafc', lightBg2: '#f1f5f9', lightBg3: '#e2e8f0',
-  lightCard: '#ffffff', lightBorder: 'rgba(0,0,0,0.08)',
-  lightText: '#0f172a', lightMuted: '#475569',
+  // Light Theme (Content) -> Adjusted to Mid-tone (Dim Mode)
+  lightBg1: '#1e293b', lightBg2: '#0f172a', lightBg3: '#334155',
+  lightCard: '#2d3748', lightBorder: 'rgba(255, 255, 255, 0.08)',
+  lightText: '#e2e8f0', lightMuted: '#94a3b8',
 
   // Shadows
-  shadowUI: '0 25px 50px -12px rgba(0,0,0,0.25)',
-  shadowCard: '0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -4px rgba(0,0,0,0.05)',
-  shadowGlow: '0 0 30px rgba(59,130,246,0.3)',
+  shadowUI: '0 25px 50px -12px rgba(0,0,0,0.5)',
+  shadowCard: '0 10px 15px -3px rgba(0,0,0,0.3), 0 4px 6px -4px rgba(0,0,0,0.2)',
+  shadowGlow: '0 0 30px rgba(20, 184, 166, 0.15)',
 };

@@ -2,273 +2,248 @@ import React, { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import './LandingPage.css';
 
-// ─── NEURAL NETWORK BACKGROUND ──────────────────────────────────────────────
-function NeuralBackground() {
-  // Generate glowing nodes and lines deterministically for the background
-  // Using fixed arrays mapped statically to avoid hydration/render mismatches
-  const nodeCount = 40;
-  
-  // Use a pseudo-random generator with a fixed seed so it's consistent
-  const seed = 12345;
-  const pseudoRandom = (n) => {
-     let x = Math.sin(seed + n) * 10000;
-     return x - Math.floor(x);
-  };
+// --- COMPONENTS ---
 
-  const nodes = Array.from({ length: nodeCount }).map((_, i) => ({
-    id: i,
-    x: pseudoRandom(i) * 100,
-    y: pseudoRandom(i + 100) * 100,
-    r: pseudoRandom(i + 200) * 3 + 1,
-    type: pseudoRandom(i + 300) > 0.5 ? 'node' : 'node-purple',
-    delay: pseudoRandom(i + 400) * 2
-  }));
-
-  const connections = [];
-  const activeFlows = [];
-  for (let i = 0; i < nodes.length; i++) {
-    for (let j = i + 1; j < nodes.length; j++) {
-      const dx = nodes[i].x - nodes[j].x;
-      const dy = nodes[i].y - nodes[j].y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist < 20) {
-        connections.push({ id: `${i}-${j}`, x1: nodes[i].x, y1: nodes[i].y, x2: nodes[j].x, y2: nodes[j].y });
-        if (pseudoRandom(i*100+j) > 0.8) {
-           activeFlows.push({ ...connections[connections.length-1], flowType: pseudoRandom(i*200+j) > 0.5 ? 'flow-line' : 'flow-line-purple' });
-        }
-      }
-    }
-  }
-
-  return (
-    <div className="neural-bg">
-      <svg className="neural-nodes" viewBox="0 0 100 100" preserveAspectRatio="none">
-        {/* Base Connections */}
-        {connections.map(c => (
-          <line key={`c-${c.id}`} x1={`${c.x1}%`} y1={`${c.y1}%`} x2={`${c.x2}%`} y2={`${c.y2}%`} className="connection" />
-        ))}
-        {/* Animated Data Flows */}
-        {activeFlows.map(c => (
-          <line key={`f-${c.id}`} x1={`${c.x1}%`} y1={`${c.y1}%`} x2={`${c.x2}%`} y2={`${c.y2}%`} className={c.flowType} />
-        ))}
-        {/* Glowing Nodes */}
-        {nodes.map(n => (
-          <circle key={`n-${n.id}`} cx={`${n.x}%`} cy={`${n.y}%`} r={n.r} className={n.type} style={{ transformOrigin: `${n.x}% ${n.y}%`, animationDelay: `${n.delay}s` }} />
-        ))}
-      </svg>
-      {/* Dynamic Overlay for blending */}
-      <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(ellipse at center, transparent 0%, var(--bg-deep) 100%)' }} />
+const Navbar = () => (
+  <nav style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1000, background: 'rgba(15, 23, 42, 0.8)', backdropFilter: 'blur(12px)', borderBottom: '1px solid var(--border)', padding: '16px 5%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+    <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
+      <div style={{ width: 32, height: 32, background: 'linear-gradient(135deg, var(--accent), var(--accent-soft))', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 'bold' }}>H</div>
+      <span style={{ fontSize: 18, fontWeight: 800, color: 'var(--primary)', letterSpacing: '-0.02em' }}>HealthAnalyzer<span style={{color: 'var(--accent)'}}>.</span></span>
+    </Link>
+    <div style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
+      <a href="#features" style={{ color: 'var(--content-muted)', textDecoration: 'none', fontSize: 14, fontWeight: 600 }}>Features</a>
+      <a href="#how-it-works" style={{ color: 'var(--content-muted)', textDecoration: 'none', fontSize: 14, fontWeight: 600 }}>Workflow</a>
+      <Link to="/login" style={{ color: 'var(--primary)', textDecoration: 'none', fontSize: 14, fontWeight: 700 }}>Sign In</Link>
+      <Link to="/register" className="btn btn-primary" style={{ padding: '10px 24px', fontSize: 13, borderRadius: '12px' }}>Get Started</Link>
     </div>
-  );
-}
+  </nav>
+);
 
-// ─── NAVBAR (Glassmorphism dark) ──────────────────────────────────────────────
-function Navbar() {
-  return (
-    <nav style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 1000, background: 'rgba(2, 6, 23, 0.7)', backdropFilter: 'blur(24px)', borderBottom: '1px solid var(--glass-border)', padding: '16px 4%', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-      <Link to="/" style={{ display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none' }}>
-        <div style={{ width: 36, height: 36, background: 'linear-gradient(135deg, var(--accent-cyan), var(--accent-blue))', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 20 }}>🧬</div>
-        <span style={{ fontSize: 20, fontWeight: 800, color: 'var(--text-main)', letterSpacing: '-0.02em', textShadow: '0 0 10px rgba(56,189,248,0.3)' }}>HealthAnalyzer<span style={{color: 'var(--accent-cyan)'}}>.ai</span></span>
-      </Link>
-      <div style={{ display: 'flex', gap: 32, alignItems: 'center' }}>
-        <a href="#features" style={{ color: 'var(--text-muted)', fontSize: 15, fontWeight: 500, textDecoration: 'none', transition: 'color 0.2s' }}>Platform</a>
-        <a href="#dashboard" style={{ color: 'var(--text-muted)', fontSize: 15, fontWeight: 500, textDecoration: 'none', transition: 'color 0.2s' }}>Telemetry</a>
-        <Link to="/login" style={{ color: 'var(--text-main)', fontSize: 15, fontWeight: 600, textDecoration: 'none' }}>Sign In</Link>
-        <Link to="/register" className="btn-neon" style={{ padding: '10px 24px', fontSize: '0.95rem' }}>Start Analyzing</Link>
-      </div>
-    </nav>
-  );
-}
-
-// ─── HERO ───────────────────────────────────────────────────────────────────
-function Hero() {
-  return (
-    <section className="hero-wrapper">
-      <NeuralBackground />
-      
-      <div className="hero-content fade-up-enter">
-        <div style={{ display: 'inline-flex', padding: '6px 16px', background: 'rgba(56, 189, 248, 0.1)', border: '1px solid rgba(56, 189, 248, 0.2)', borderRadius: 99, alignItems: 'center', gap: 10, marginBottom: 24, boxShadow: '0 0 20px rgba(56,189,248,0.2)' }}>
-          <span style={{ width: 8, height: 8, background: 'var(--accent-cyan)', opacity: 0.8, borderRadius: '50%', boxShadow: '0 0 10px var(--accent-cyan)', animation: 'pulseBorder 2s infinite' }} />
-          <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--accent-cyan)', letterSpacing: '1px' }}>AI CLINICAL ENGINE V2.0 ACTIVE</span>
-        </div>
-        
-        <h1 style={{ fontSize: 'clamp(3.5rem, 6vw, 5.5rem)', fontWeight: 800, letterSpacing: '-0.03em', lineHeight: 1.1, margin: '0 0 24px' }}>
-          Intelligent Health Insights <br />
-          <span className="text-gradient">Powered by AI</span>
-        </h1>
-        
-        <p style={{ fontSize: '1.25rem', color: 'var(--text-muted)', lineHeight: 1.6, margin: '0 auto 40px', maxWidth: 680 }}>
-          Advanced neural networks for multi-disease risk prediction, automated CBC parsing, and real-time physiological telemetry. The future of data-driven medicine is here.
-        </p>
-        
-        <div style={{ display: 'flex', gap: 20, justifyContent: 'center' }}>
-           <Link to="/register" className="btn-neon">Initialize Workspace</Link>
-           <a href="#features" className="btn-outline">View Architecture</a>
-        </div>
-
-        {/* Floating Feature Cards */}
-        <div className="floating-cards-container">
-          {[
-            { tag: 'AI Diagnostics', icon: '🧠', color: '#3b82f6' },
-            { tag: 'Risk Prediction', icon: '⚠️', color: '#8b5cf6' },
-            { tag: 'CBC Analysis', icon: '🩸', color: '#f43f5e' },
-            { tag: 'Real-Time Monitoring', icon: '⚡', color: '#00f2fe' }
-          ].map((f, i) => (
-            <div key={i} className="glass-panel floating-card" style={{ padding: '12px 20px', display: 'flex', alignItems: 'center', gap: 12, borderRadius: 12 }}>
-               <span style={{ fontSize: '1.25rem', filter: `drop-shadow(0 0 10px ${f.color})` }}>{f.icon}</span>
-               <span style={{ fontSize: '0.95rem', fontWeight: 600, color: '#fff' }}>{f.tag}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Massive Realistic Dashboard Mockup */}
-      <div id="dashboard" className="glass-panel dashboard-mockup pulsing-border fade-up-enter" style={{ padding: 24, animationDelay: '0.4s' }}>
-        {/* Top Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--glass-border)', paddingBottom: 16, marginBottom: 24 }}>
-           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-              <div style={{ background: 'rgba(56,189,248,0.1)', padding: 12, borderRadius: 12 }}><span style={{ fontSize: 24 }}>📊</span></div>
-              <div>
-                 <h3 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: '#fff' }}>Real-Time Telemetry & Prediction</h3>
-                 <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>Patient Node: HZ-9921 • Connection: Synchronized</span>
-              </div>
-           </div>
-           <div style={{ display: 'flex', gap: 12 }}>
-              <span className="badge-glow">SYSTEM STABLE</span>
-              <span className="badge-glow high">CARDIAC RISK DETECTED</span>
-           </div>
-        </div>
-
-        {/* Dense Telemetry Data */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 20, marginBottom: 24 }}>
-          {[
-            { label: 'GLUCOSE LEVEL', val: '142', unit: 'mg/dL', status: 'ELEVATED', badgeClass: 'medium', chartColor: '#fbbf24', spark: "M0,15 L10,5 L20,12 L30,2 L40,15 L50,8 L60,18" },
-            { label: 'BLOOD PRESSURE', val: '138/88', unit: 'mmHg', status: 'PRE-HYPERTENSION', badgeClass: 'medium', chartColor: '#f87171', spark: "M0,10 L10,12 L20,1 L30,19 L40,8 L50,11 L60,9" },
-            { label: 'HEART RATE', val: '72', unit: 'bpm', status: 'NORMAL', badgeClass: '', chartColor: '#34d399', spark: "M0,10 L10,10 L15,2 L25,18 L35,8 L40,10 L60,10" },
-            { label: 'CBC ABNORMALITIES', val: '1', unit: 'flagged', status: 'REVIEW REQ', badgeClass: 'high', chartColor: '#8b5cf6', spark: "M0,18 L10,18 L20,18 L30,2 L40,18 L50,18 L60,18" }
-          ].map((m, i) => (
-            <div key={i} style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid var(--glass-border)', borderRadius: 16, padding: 20 }}>
-               <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 12 }}>{m.label}</div>
-               <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 16 }}>
-                 <span style={{ fontSize: 32, fontWeight: 800, fontFamily: "'JetBrains Mono', monospace", color: '#fff', textShadow: `0 0 20px ${m.chartColor}` }}>{m.val}</span>
-                 <span style={{ fontSize: 14, color: 'var(--text-muted)' }}>{m.unit}</span>
-               </div>
-               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-                 <span className={`badge-glow ${m.badgeClass}`}>{m.status}</span>
-                 {/* Mini SVG Sparkline */}
-                 <svg width="60" height="20" viewBox="0 0 60 20">
-                   <path d={m.spark} fill="none" stroke={m.chartColor} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                 </svg>
-               </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Risk Prediction Chart Area */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 2fr) minmax(0, 1fr)', gap: 20, '@media (max-width: 900px)': { gridTemplateColumns: '1fr' } }}>
-          <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid var(--glass-border)', borderRadius: 16, padding: 24, position: 'relative', overflow: 'hidden' }}>
-             <h4 style={{ margin: '0 0 16px', fontSize: 15, fontWeight: 700, color: 'var(--text-muted)' }}>MULTI-DIMENSIONAL RISK TRAJECTORY</h4>
-             {/* Chart Visual */}
-             <div style={{ height: 200, position: 'relative', borderLeft: '1px solid var(--glass-border)', borderBottom: '1px solid var(--glass-border)' }}>
-                <svg width="100%" height="100%" viewBox="0 0 100 100" preserveAspectRatio="none">
-                   <defs>
-                      <linearGradient id="grad1" x1="0" y1="0" x2="0" y2="1">
-                         <stop offset="0%" stopColor="rgba(56, 189, 248, 0.4)" />
-                         <stop offset="100%" stopColor="transparent" />
-                      </linearGradient>
-                      <linearGradient id="grad2" x1="0" y1="0" x2="0" y2="1">
-                         <stop offset="0%" stopColor="rgba(139, 92, 246, 0.4)" />
-                         <stop offset="100%" stopColor="transparent" />
-                      </linearGradient>
-                   </defs>
-                   <path d="M0,80 Q20,60 40,70 T80,40 T100,20 L100,100 L0,100 Z" fill="url(#grad1)" />
-                   <path d="M0,80 Q20,60 40,70 T80,40 T100,20" fill="none" stroke="var(--accent-cyan)" strokeWidth="3" style={{ filter: 'drop-shadow(0 0 5px var(--accent-cyan))' }} />
-
-                   <path d="M0,90 Q30,80 50,50 T100,60 L100,100 L0,100 Z" fill="url(#grad2)" />
-                   <path d="M0,90 Q30,80 50,50 T100,60" fill="none" stroke="var(--accent-purple)" strokeWidth="2" strokeDasharray="4" style={{ filter: 'drop-shadow(0 0 5px var(--accent-purple))' }} />
-                </svg>
-                <div style={{ position: 'absolute', top: '15%', right: 0, width: 12, height: 12, background: 'var(--accent-cyan)', borderRadius: '50%', boxShadow: '0 0 20px var(--accent-cyan)', animation: 'pulseBorder 1s infinite' }} />
-             </div>
+const MappedDashboard = () => (
+  <div style={{ padding: '24px', background: 'var(--content-bg)', display: 'grid', gridTemplateColumns: '220px 1fr', gap: '24px' }}>
+    <div style={{ borderRight: '1px solid var(--border)', paddingRight: '24px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+      <div style={{ padding: '10px 16px', background: 'rgba(20, 184, 166, 0.1)', borderRadius: '10px', color: 'var(--accent)', fontSize: '13px', fontWeight: 800 }}>Clinical Workspace</div>
+      {['Diagnostic Registry', 'Biolink Sync', 'Risk Trajectories', 'Team Analytics', 'Settings'].map(item => (
+        <div key={item} style={{ padding: '8px 16px', color: 'var(--content-muted)', fontSize: '12px', fontWeight: 600 }}>{item}</div>
+      ))}
+    </div>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' }}>
+        {[
+          { label: 'Glucose', val: '94', unit: 'mg/dL', status: 'Optimal', color: '#10b981' },
+          { label: 'Blood Pressure', val: '118/78', unit: 'mmHg', status: 'Normal', color: '#10b981' },
+          { label: 'Oxygen Sat', val: '99', unit: '%', status: 'Stable', color: '#10b981' },
+          { label: 'Diabetes Risk', val: '4.2%', unit: 'Prop', status: 'Minimal', color: '#10b981' }
+        ].map(stat => (
+          <div key={stat.label} style={{ background: 'var(--content-card)', border: '1px solid var(--border)', padding: '16px', borderRadius: '16px' }}>
+            <div style={{ fontSize: '10px', color: 'var(--content-muted)', textTransform: 'uppercase', fontWeight: 800, letterSpacing: '0.05em', marginBottom: '8px' }}>{stat.label}</div>
+            <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--primary)' }}>{stat.val}<span style={{ fontSize: '11px', marginLeft: '4px', color: 'var(--content-muted)' }}>{stat.unit}</span></div>
+            <div style={{ fontSize: '10px', color: stat.color, marginTop: '8px', fontWeight: 800 }}>• {stat.status}</div>
           </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-             <div style={{ flex: 1, background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(0,0,0,0.4) 100%)', border: '1px solid rgba(239, 68, 68, 0.3)', borderRadius: 16, padding: 24 }}>
-                <div className="badge-glow high" style={{ display: 'inline-block', marginBottom: 12 }}>CRITICAL AI ALERT</div>
-                <div style={{ fontSize: 36, fontWeight: 800, color: '#f87171', fontFamily: "'JetBrains Mono', monospace", marginBottom: 8 }}>82% Risk</div>
-                <div style={{ fontSize: 14, color: '#fca5a5', lineHeight: 1.5 }}>Diagnostic Engine isolated a high-confidence cardiac event probability based on compounding vitals geometry.</div>
-             </div>
-             <div style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid var(--glass-border)', borderRadius: 16, padding: 20, display: 'flex', gap: 16, alignItems: 'center' }}>
-                <div style={{ width: 48, height: 48, borderRadius: 12, background: 'rgba(56, 189, 248, 0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24 }}>🌐</div>
-                <div>
-                   <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--text-main)', marginBottom: 4 }}>Neural Link Active</div>
-                   <div style={{ fontSize: 13, color: 'var(--text-muted)' }}>Live sync from wearable APIs</div>
-                </div>
-             </div>
-          </div>
-        </div>
+        ))}
       </div>
-    </section>
-  );
-}
-
-// ─── AI FEATURES ─────────────────────────────────────────────────────────────
-function Features() {
-  return (
-    <section id="features" className="ai-features">
-      <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: 60 }}>
-          <h2 style={{ fontSize: 'clamp(2.5rem, 4vw, 3.5rem)', fontWeight: 800, margin: '0 0 16px' }}>Deep Intelligence Architecture</h2>
-          <p style={{ fontSize: '1.25rem', color: 'var(--text-muted)', maxWidth: 640, margin: '0 auto' }}>Purpose-built healthcare models that process unstructured clinical data into actionable vectors.</p>
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 32 }}>
-          {[
-            { tag: 'OCR Neural Net', title: 'Automated CBC Extraction', desc: 'Upload unstructured PDF reports. Proprietary Vision AI scans and normalizes over 20 parameters instantly.', color: 'var(--accent-cyan)', icon: '👁️' },
-            { tag: 'Heuristic Models', title: 'Predictive Triggers', desc: 'Continuous scalar algorithms evaluate cardiac and hypertension probability vectors before symptoms arise.', color: 'var(--accent-purple)', icon: '⚛️' },
-            { tag: 'Secure Silos', title: 'Encrypted Telemetry', desc: 'HIPAA-grade data ingestion mapping. Every byte is encrypted at rest and in transit through secure tunnels.', color: 'var(--accent-blue)', icon: '🛡️' }
-          ].map((f,i) => (
-            <div key={i} className="glass-panel" style={{ padding: 40, borderTop: `2px solid ${f.color}`}}>
-              <div style={{ width: 64, height: 64, borderRadius: 16, background: `rgba(255,255,255,0.05)`, border: '1px solid var(--glass-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 32, marginBottom: 24, boxShadow: `0 0 20px ${f.color}40`, filter: `drop-shadow(0 0 10px ${f.color})` }}>{f.icon}</div>
-              <div style={{ fontSize: 12, fontWeight: 700, letterSpacing: '1px', color: f.color, marginBottom: 12, textTransform: 'uppercase' }}>{f.tag}</div>
-              <h3 style={{ fontSize: 24, fontWeight: 800, marginBottom: 16 }}>{f.title}</h3>
-              <p style={{ fontSize: 16, color: 'var(--text-muted)', lineHeight: 1.6 }}>{f.desc}</p>
-            </div>
-          ))}
-        </div>
+      <div style={{ background: 'var(--content-card)', border: '1px solid var(--border)', borderRadius: '16px', padding: '24px', height: '180px', position: 'relative' }}>
+        <div style={{ fontSize: '13px', color: 'var(--primary)', fontWeight: 800, marginBottom: '20px' }}>Real-time Biometric Pulse Analysis</div>
+        <svg width="100%" height="80" viewBox="0 0 400 100" preserveAspectRatio="none">
+          <path d="M0,80 Q50,70 100,50 T200,60 T300,20 T400,30" fill="none" stroke="var(--accent)" strokeWidth="3" />
+          <path d="M0,90 Q50,85 100,75 T200,80 T300,60 T400,65" fill="none" stroke="var(--accent-soft)" strokeWidth="2" strokeDasharray="6" />
+        </svg>
       </div>
-    </section>
-  );
-}
+    </div>
+  </div>
+);
 
-// ─── FOOTER ──────────────────────────────────────────────────────────────────
-function Footer() {
-  return (
-    <footer style={{ background: 'var(--bg-deep-blue)', borderTop: '1px solid var(--glass-border)', padding: '60px 4% 30px', position: 'relative', zIndex: 10 }}>
-      <div style={{ maxWidth: 1200, margin: '0 auto', display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
-        <h2 style={{ fontSize: 'clamp(2rem, 3vw, 2.5rem)', fontWeight: 800, marginBottom: 24 }}>Ready to integrate Health Analyzer?</h2>
-        <p style={{ fontSize: '1.2rem', color: 'var(--text-muted)', marginBottom: 40, maxWidth: 500 }}>Join the future of machine-learning assisted clinical diagnostics.</p>
-        <Link to="/register" className="btn-neon" style={{ marginBottom: 60 }}>Initialize Platform</Link>
-        
-        <div style={{ width: '100%', borderTop: '1px solid var(--glass-border)', paddingTop: 30, display: 'flex', justifyContent: 'space-between', color: 'var(--text-muted)', fontSize: 14 }}>
-          <span>© 2026 Health Analyzer AI. System Online.</span>
-          <div style={{ display: 'flex', gap: 24 }}>
-             <span style={{ cursor: 'pointer' }}>Privacy Schema</span>
-             <span style={{ cursor: 'pointer' }}>Terms of Service</span>
-          </div>
-        </div>
-      </div>
-    </footer>
-  );
-}
+const FeatureCard = ({ icon, title, desc }) => (
+  <div className="bento-card scroll-reveal">
+    <div className="card-icon">{icon}</div>
+    <h3 style={{ fontSize: '20px', margin: '0 0 12px' }}>{title}</h3>
+    <p style={{ color: 'var(--content-muted)', fontSize: '15px', lineHeight: '1.5', margin: 0 }}>{desc}</p>
+  </div>
+);
 
-// ─── ROOT ─────────────────────────────────────────────────────────────────────
+// --- MAIN PAGE ---
+
 export default function LandingPage() {
+  const revealRefs = useRef([]);
+
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add('visible');
+          }
+        });
+      },
+      { threshold: 0.1 }
+    );
+
+    document.querySelectorAll('.scroll-reveal').forEach((el) => observer.observe(el));
+    return () => observer.disconnect();
+  }, []);
+
   return (
-    <div style={{ background: 'var(--bg-deep)', minHeight: '100vh', overflowX: 'hidden', position: 'relative' }}>
+    <div className="landing-root">
       <Navbar />
-      <Hero />
-      <Features />
-      <Footer />
+
+      {/* HERO SECTION */}
+      <header className="hero">
+        <div className="hero-grid" />
+        <div className="hero-glow" />
+        <div className="hero-inner scroll-reveal visible">
+          <span className="hero-tag">ENTERPRISE CLINICAL ANALYTICS</span>
+          <h1>Clinical Intelligence,<br /><span className="gradient-highlight">Zero Compromise.</span></h1>
+          <p>
+            Unified healthcare OS for predictive multi-disease stratification, automated CBC extraction, and real-time patient telemetry.
+          </p>
+          <div style={{ display: 'flex', gap: 16 }}>
+            <Link to="/register" className="btn btn-primary">Launch Workspace</Link>
+            <a href="#how-it-works" className="btn btn-glass">Explore Documentation</a>
+          </div>
+
+          <div className="hero-mockup animate-float">
+            <div style={{ background: 'var(--content-bg)', padding: '12px 20px', borderBottom: '1px solid var(--border)', display: 'flex', gap: '8px' }}>
+              <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#ff5f56' }} />
+              <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#ffbd2e' }} />
+              <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#27c93f' }} />
+            </div>
+            <MappedDashboard />
+          </div>
+        </div>
+      </header>
+
+      {/* STATS BAR */}
+      <div className="stats-bar scroll-reveal">
+        <div className="stats-inner">
+          <div className="stat-item">
+            <h3>99.9%</h3>
+            <p>DIAGNOSTIC ACCURACY</p>
+          </div>
+          <div className="stat-item">
+            <h3>&lt; 2s</h3>
+            <p>EXTRACTION LATENCY</p>
+          </div>
+          <div className="stat-item">
+            <h3>500k+</h3>
+            <p>RECORDS ANALYZED</p>
+          </div>
+          <div className="stat-item">
+            <h3>HIPAA</h3>
+            <p>SECURITY COMPLIANT</p>
+          </div>
+        </div>
+      </div>
+
+      {/* FEATURES SECTION */}
+      <section id="features" className="section">
+        <div className="hero-inner">
+          <div className="section-header">
+            <span className="section-tag">Capabilities</span>
+            <h2>Every clinical vector. <br />One unified platform.</h2>
+            <p className="desc">Deeply integrated algorithms mapping precise patient trajectories across chronic and acute conditions.</p>
+          </div>
+          <div className="card-grid">
+            <FeatureCard 
+              icon="🧬" 
+              title="Predictive Stratification" 
+              desc="ML models actively assess incoming parameters to flag pre-diabetic or hypertensive escalations before they occur."
+            />
+            <FeatureCard 
+              icon="🩸" 
+              title="Automated CBC Extraction" 
+              desc="Proprietary Vision AI normalizes unstructured PDF reports into structured clinical datasets in seconds."
+            />
+            <FeatureCard 
+              icon="🛡️" 
+              title="Enterprise Security" 
+              desc="Military-grade encryption for all patient data, ensuring full HIPAA and GDPR compliance at scale."
+            />
+          </div>
+        </div>
+      </section>
+
+      {/* HOW IT WORKS */}
+      <section id="how-it-works" className="section section-grey">
+        <div className="hero-inner">
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 1fr) 1fr', gap: '80px', alignItems: 'center', textAlign: 'left' }}>
+            <div className="scroll-reveal">
+              <span className="section-tag">Clinical Workflow</span>
+              <h2>Seamless Data Transformation</h2>
+              <p className="desc" style={{ marginBottom: '32px' }}>We've replaced scattered spreadsheets with a single pane of glass for clinical decision making.</p>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                {[
+                  { step: '01', t: 'Data Ingestion', d: 'Securely upload clinical PDFs or stream real-time vitals.' },
+                  { step: '02', t: 'AI Processing', d: 'Models run multi-variable risk stratification against global benchmarks.' },
+                  { step: '03', t: 'Clinical Insight', d: 'Actionable reports with prediction confidence and historical trends.' }
+                ].map(item => (
+                  <div key={item.step} style={{ display: 'flex', gap: '20px' }}>
+                    <span style={{ fontSize: '18px', fontWeight: '800', color: 'var(--accent)' }}>{item.step}</span>
+                    <div>
+                      <h4 style={{ margin: '0 0 4px', fontSize: '16px' }}>{item.t}</h4>
+                      <p style={{ margin: 0, fontSize: '14px', color: 'var(--content-muted)' }}>{item.d}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="scroll-reveal bento-card" style={{ padding: 0, overflow: 'hidden', border: 'none', boxShadow: 'var(--shadow-xl)' }}>
+              <div style={{ background: 'var(--bg-main)', padding: '24px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span style={{ fontWeight: 'bold', fontSize: '14px', color: 'var(--primary)' }}>Patient Risk Factor Map</span>
+                <span style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444', padding: '4px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 'bold' }}>CRITICAL</span>
+              </div>
+              <div style={{ padding: '32px', background: 'var(--content-card)' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                  {[
+                    { l: 'BP Complexity', w: '85%' },
+                    { l: 'Glucose Stability', w: '40%' },
+                    { l: 'Cardiac Elasticity', w: '72%' }
+                  ].map(line => (
+                    <div key={line.l}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '8px', color: '#64748b' }}>
+                        <span>{line.l}</span>
+                        <span>{line.w}</span>
+                      </div>
+                      <div style={{ height: '6px', background: 'var(--bg-main)', borderRadius: '3px' }}>
+                        <div style={{ height: '100%', width: line.w, background: 'var(--accent)', borderRadius: '3px' }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* FINAL CTA */}
+      <section className="section" style={{ textAlign: 'center', background: 'var(--accent)', color: 'white' }}>
+        <div className="hero-inner scroll-reveal">
+          <h2 style={{ color: 'white', marginBottom: '24px' }}>Ready to transform your clinical workflow?</h2>
+          <p style={{ color: 'rgba(255,255,255,0.8)', marginBottom: '40px', maxWidth: '600px', margin: '0 auto 40px', fontWeight: 500 }}>Join hundreds of practitioners using Health Analyzer to deliver precise, data-driven patient care.</p>
+          <div style={{ display: 'flex', gap: 16, justifyContent: 'center' }}>
+            <Link to="/register" className="btn btn-glass" style={{ background: 'var(--primary)', color: 'var(--bg-main)', fontWeight: 800 }}>Start Free Trial</Link>
+            <Link to="/login" className="btn btn-outline" style={{ color: 'white', borderColor: 'rgba(255,255,255,0.4)', fontWeight: 600 }}>Platform Access</Link>
+          </div>
+        </div>
+      </section>
+
+      {/* FOOTER */}
+      <footer style={{ padding: '60px 5% 30px', background: 'var(--content-bg)', borderTop: '1px solid var(--border)' }}>
+        <div className="hero-inner">
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ width: 24, height: 24, background: 'var(--accent)', borderRadius: 6 }} />
+              <span style={{ fontWeight: 'bold', color: 'var(--primary)' }}>Health Analyzer</span>
+            </div>
+            <div style={{ display: 'flex', gap: 24, fontSize: '14px', color: 'var(--content-muted)' }}>
+              <span>Privacy Policy</span>
+              <span>Terms of Service</span>
+              <span>© 2026 Health Analyzer Systems</span>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

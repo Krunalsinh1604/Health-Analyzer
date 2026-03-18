@@ -66,82 +66,87 @@ function Register() {
         <div className="grid-bg" style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none' }} />
         
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem', position: 'relative', zIndex: 1 }}>
-          <div className="bento-card animate-up" style={{ maxWidth: '440px', width: '100%', padding: '40px' }}>
-            <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-              <div style={{ fontSize: '36px', marginBottom: '16px' }}>⚕️</div>
-              <h2 style={{ fontSize: '28px', fontWeight: 800, margin: '0 0 8px' }}>Create Account</h2>
-              <p style={{ color: C.lightMuted, margin: 0, fontSize: '15px' }}>Join Health Analyzer today</p>
+          <div className="db-card animate-db" style={{ maxWidth: '440px', width: '100%', padding: '48px', border: '1px solid var(--db-border)' }}>
+            <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+              <div style={{ fontSize: '40px', marginBottom: '16px' }}>🩺</div>
+              <h2 style={{ fontSize: '28px', fontWeight: 800, margin: '0 0 8px', color: 'var(--db-text)', letterSpacing: '-0.02em' }}>Create Account</h2>
+              <p style={{ color: 'var(--db-muted)', margin: 0, fontSize: '15px' }}>Join the Health Analyzer registry</p>
             </div>
 
-            {error && <div style={{ background: C.crimsonBg, color: C.crimson, padding: '12px', borderRadius: '8px', fontSize: '14px', marginBottom: '20px', textAlign: 'center', fontWeight: 500 }}>{error}</div>}
+            {error && <div style={{ background: '#fef2f2', color: 'var(--db-crimson)', padding: '12px', borderRadius: '12px', fontSize: '14px', marginBottom: '24px', textAlign: 'center', fontWeight: 600, border: '1px solid #fee2e2' }}>{error}</div>}
 
-            <form onSubmit={handleSubmit} className="field-light">
+            <form onSubmit={handleSubmit} className="db-input-group">
               <div style={{ display: 'grid', gap: '20px' }}>
-                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <span style={{ fontSize: '14px', fontWeight: 600, color: C.lightText }}>Full Name</span>
+                <label style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--db-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Full Name</span>
                   <input
                     type="text"
+                    className="db-input"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                     required
-                    style={{ padding: '12px', borderRadius: '8px', border: `1px solid ${C.lightBorder}`, width: '100%', outline: 'none' }}
+                    placeholder="Dr. John Doe"
                   />
                 </label>
 
-                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <span style={{ fontSize: '14px', fontWeight: 600, color: C.lightText }}>Email</span>
+                <label style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--db-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Email Address</span>
                   <input
                     type="email"
+                    className="db-input"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     required
-                    style={{ padding: '12px', borderRadius: '8px', border: `1px solid ${C.lightBorder}`, width: '100%', outline: 'none' }}
+                    placeholder="john@hospital.com"
                   />
                 </label>
 
-                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <span style={{ fontSize: '14px', fontWeight: 600, color: C.lightText }}>Mobile Number</span>
+                <label style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--db-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Mobile Registry</span>
                   <input
                     type="tel"
+                    className="db-input"
                     value={mobileNo}
                     onChange={(e) => setMobileNo(e.target.value)}
                     required
-                    style={{ padding: '12px', borderRadius: '8px', border: `1px solid ${C.lightBorder}`, width: '100%', outline: 'none' }}
+                    placeholder="+1 (555) 000-0000"
                   />
                 </label>
 
-                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <span style={{ fontSize: '14px', fontWeight: 600, color: C.lightText }}>Password</span>
+                <label style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--db-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Security Key</span>
                   <input
                     type="password"
+                    className="db-input"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    style={{ padding: '12px', borderRadius: '8px', border: `1px solid ${C.lightBorder}`, width: '100%', outline: 'none' }}
+                    placeholder="••••••••"
                   />
                 </label>
 
-                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <span style={{ fontSize: '14px', fontWeight: 600, color: C.lightText }}>Confirm Password</span>
+                <label style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--db-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Confirm Key</span>
                   <input
                     type="password"
+                    className="db-input"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     required
-                    style={{ padding: '12px', borderRadius: '8px', border: `1px solid ${C.lightBorder}`, width: '100%', outline: 'none' }}
+                    placeholder="••••••••"
                   />
                 </label>
               </div>
 
               <div style={{ marginTop: '32px' }}>
-                <button type="submit" className="btn-primary" style={{ width: '100%', padding: '14px', fontSize: '16px' }}>
-                  Register
+                <button type="submit" className="db-btn-primary" style={{ width: '100%', padding: '16px', fontSize: '16px' }}>
+                  INITIALIZE ACCOUNT
                 </button>
               </div>
 
               <div style={{ textAlign: "center", marginTop: "24px" }}>
-                <span style={{ fontSize: "14px", color: C.lightMuted, fontWeight: 500 }}>
-                  Already have an account? <Link to="/login" style={{ color: C.primary, textDecoration: 'none', marginLeft: '4px' }}>Login here <span aria-hidden="true">&rarr;</span></Link>
+                <span style={{ fontSize: "14px", color: 'var(--db-muted)', fontWeight: 600 }}>
+                  Already registered? <Link to="/login" style={{ color: 'var(--db-accent)', textDecoration: 'none', marginLeft: '4px' }}>Access Login <span aria-hidden="true">&rarr;</span></Link>
                 </span>
               </div>
             </form>

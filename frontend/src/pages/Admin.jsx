@@ -50,7 +50,7 @@ function AdminPage() {
       if (counts[level] !== undefined) counts[level]++;
     });
     return [
-      { name: 'Low Risk', value: counts.Low, color: '#00D4FF' },
+      { name: 'Low Risk', value: counts.Low, color: '#2dd4bf' },
       { name: 'Moderate Risk', value: counts.Moderate, color: '#FFD700' },
       { name: 'High Risk', value: counts.High, color: '#FF4560' }
     ].filter(d => d.value > 0);
@@ -64,7 +64,7 @@ function AdminPage() {
       if (p.has_heart) heart++;
     });
     return [
-      { name: 'Diabetes', cases: dia, fill: '#00D4FF' },
+      { name: 'Diabetes', cases: dia, fill: '#0d9488' },
       { name: 'Hypertension', cases: htn, fill: '#FFD700' },
       { name: 'Heart Disease', cases: heart, fill: '#FF4560' }
     ];
@@ -85,12 +85,12 @@ function AdminPage() {
       <main className="page-inner">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '32px' }}>
           <div className="animate-up">
-            <span className="feature-pill">CLINICAL DIRECTORY</span>
-            <h1 className="page-title">Dashboard Overview</h1>
-            <p className="page-desc">Monitor your patients' clinical assessments and real-time risk factors.</p>
+            <h2 style={{ fontSize: 13, fontWeight: 700, color: 'var(--db-accent)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 8 }}>PLATFORM ADMINISTRATION</h2>
+            <h1 style={{ fontSize: 28, fontWeight: 800, color: 'var(--db-text)', margin: 0, letterSpacing: '-0.02em' }}>Clinical Patient Directory</h1>
+            <p style={{ margin: '4px 0 0 0', color: 'var(--db-muted)', fontSize: '15px' }}>Oversee patient metrics and synchronize clinical telemetry.</p>
           </div>
-          <button onClick={fetchData} className="btn-primary animate-up" style={{ animationDelay: '0.1s' }}>
-            ↻ Refresh Data
+          <button onClick={fetchData} className="db-btn-secondary animate-up" style={{ animationDelay: '0.1s' }}>
+            ↻ Refresh Analytics
           </button>
         </div>
 
@@ -99,21 +99,21 @@ function AdminPage() {
 
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px', marginBottom: '40px' }}>
           {[
-            { title: "Total Patients", value: patients.length, color: "#00D4FF", delay: '0.1s' },
-            { title: "Clinical Assessments", value: totalAssessments, color: "#FFD700", delay: '0.2s' },
-            { title: "High Risk Alerts", value: emergencyPatients.length, color: "#FF4560", delay: '0.3s' },
-            { title: "Critical Interventions", value: emergencyPatients.length > 0 ? emergencyPatients.length : 0, color: "#FF4560", delay: '0.4s' }
+            { title: "Total Patients", value: patients.length, color: "var(--db-accent)", delay: '0.1s' },
+            { title: "Clinical Assessments", value: totalAssessments, color: "var(--db-emerald)", delay: '0.2s' },
+            { title: "High Risk Alerts", value: emergencyPatients.length, color: "var(--db-crimson)", delay: '0.3s' },
+            { title: "System Integrations", value: 12, color: "var(--db-accent)", delay: '0.4s' }
           ].map((kpi, idx) => (
-            <div key={idx} className="bento-card animate-up" style={{ animationDelay: kpi.delay, borderTop: `4px solid ${kpi.color}` }}>
-              <div style={{ color: '#64748b', fontSize: '13px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>{kpi.title}</div>
-              <div style={{ fontSize: '36px', fontWeight: 800, color: '#0f172a' }}>{kpi.value}</div>
+            <div key={idx} className="db-card animate-db" style={{ animationDelay: kpi.delay, borderTop: `4px solid ${kpi.color}` }}>
+              <div style={{ color: 'var(--db-muted)', fontSize: '12px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '8px' }}>{kpi.title}</div>
+              <div style={{ fontSize: '32px', fontWeight: 800, color: 'var(--db-text)' }}>{kpi.value}</div>
             </div>
           ))}
         </div>
 
-        <div className="layout animate-up" style={{ animationDelay: '0.5s' }}>
-          <div className="bento-card">
-            <h3 style={{ margin: '0 0 24px 0', color: '#0f172a', fontSize: '20px', fontWeight: 800 }}>Patient Risk Distribution</h3>
+        <div className="layout animate-up" style={{ animationDelay: '0.5s', gridTemplateColumns: '1fr 1fr', display: 'grid', gap: '24px', marginBottom: '40px' }}>
+          <div className="db-card">
+            <h3 style={{ margin: '0 0 24px 0', color: 'var(--db-text)', fontSize: '18px', fontWeight: 800 }}>Risk Distribution</h3>
             {patients.length === 0 ? (
               <p style={{ color: '#94a3b8', textAlign: 'center', padding: '32px 0' }}>No data available to chart.</p>
             ) : (
@@ -131,18 +131,18 @@ function AdminPage() {
             )}
           </div>
 
-          <div className="bento-card">
-            <h3 style={{ margin: '0 0 24px 0', color: '#0f172a', fontSize: '20px', fontWeight: 800 }}>Condition Frequency</h3>
+          <div className="db-card">
+            <h3 style={{ margin: '0 0 24px 0', color: 'var(--db-text)', fontSize: '18px', fontWeight: 800 }}>Diagnostic Ingestion Frequency</h3>
             {patients.length === 0 ? (
               <p style={{ color: '#94a3b8', textAlign: 'center', padding: '32px 0' }}>No data available to chart.</p>
             ) : (
               <div style={{ height: '300px' }}>
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={conditionData} margin={{ top: 10, right: 30, left: 0, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: '#64748b' }} dy={10} />
-                    <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b' }} />
-                    <Tooltip cursor={{ fill: '#f8fafc' }} contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }} />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(255, 255, 255, 0.05)" />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fill: 'var(--db-muted)', fontSize: 11 }} dy={10} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fill: 'var(--db-muted)', fontSize: 11 }} />
+                    <Tooltip cursor={{ fill: 'rgba(255, 255, 255, 0.02)' }} contentStyle={{ background: 'var(--db-card)', borderRadius: '12px', border: '1px solid var(--db-border)', boxShadow: '0 10px 15px -10px rgba(0,0,0,0.5)' }} />
                     <Bar dataKey="cases" radius={[4, 4, 0, 0]} maxBarSize={60}>
                       {conditionData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.fill} />)}
                     </Bar>
@@ -153,56 +153,52 @@ function AdminPage() {
           </div>
         </div>
 
-        <div className="bento-card animate-up" style={{ animationDelay: '0.6s' }}>
+        <div className="db-card animate-db" style={{ animationDelay: '0.6s' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
             <div>
-              <h3 style={{ margin: 0, color: '#0f172a', fontSize: '20px', fontWeight: 800 }}>Patient Directory</h3>
-              <p style={{ margin: '4px 0 0 0', color: '#64748b', fontSize: '15px' }}>Comprehensive database of registered patients.</p>
+              <h3 style={{ margin: 0, color: 'var(--db-text)', fontSize: '18px', fontWeight: 800 }}>Patient Directory</h3>
+              <p style={{ margin: '4px 0 0 0', color: 'var(--db-muted)', fontSize: '14px' }}>Unified repository of registered clinical profiles.</p>
             </div>
-            <div className="field-light" style={{ width: '200px' }}>
-              <select value={filterRisk} onChange={(e) => setFilterRisk(e.target.value)}>
-                <option value="all">View All Risk Levels</option>
-                <option value="High">High Risk Only</option>
+            <div className="db-input-group" style={{ width: '220px', marginBottom: 0 }}>
+              <select className="db-select" value={filterRisk} onChange={(e) => setFilterRisk(e.target.value)}>
+                <option value="all">Global Risk View</option>
+                <option value="High">Alert: High Risk Only</option>
               </select>
             </div>
           </div>
 
           <div className="table-wrap">
-            <table className="table-light">
+            <table className="db-table">
               <thead>
                 <tr>
-                  <th>Patient Info</th>
-                  <th>Joined On</th>
-                  <th>Assessments</th>
-                  <th>Latest Risk</th>
-                  <th>Actions</th>
+                  <th>Patient Identity</th>
+                  <th>Registration Date</th>
+                  <th>Clinical Density</th>
+                  <th>Risk Stratification</th>
+                  <th>Action</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredPatients.map(p => (
                   <tr key={p.id}>
                     <td>
-                      <div style={{ fontWeight: 600, color: '#1e293b' }}>{p.full_name}</div>
-                      <div style={{ fontSize: '13px', color: '#64748b' }}>{p.email}</div>
+                      <div style={{ fontWeight: 700, color: 'var(--db-text)' }}>{p.full_name}</div>
+                      <div style={{ fontSize: '12px', color: 'var(--db-muted)' }}>{p.email}</div>
                     </td>
                     <td>{new Date(p.joined_at).toLocaleDateString()}</td>
                     <td>
-                      <span style={{ background: '#f1f5f9', color: '#475569', padding: '4px 12px', borderRadius: '999px', fontSize: '13px', fontWeight: 600 }}>
+                      <span className="db-badge" style={{ background: 'var(--db-bg)', color: 'var(--db-muted)' }}>
                         {p.total_assessments} Records
                       </span>
                     </td>
                     <td>
-                      <span style={{
-                        padding: '4px 12px', borderRadius: '999px', fontSize: '13px', fontWeight: 600,
-                        background: p.latest_risk_level === 'High' ? '#fecdd3' : p.latest_risk_level === 'Moderate' ? '#fef3c7' : '#d1fae5',
-                        color: p.latest_risk_level === 'High' ? '#be123c' : p.latest_risk_level === 'Moderate' ? '#b45309' : '#047857'
-                      }}>
+                      <span className={`db-badge db-badge-${p.latest_risk_level === 'High' ? 'crimson' : p.latest_risk_level === 'Moderate' ? 'amber' : 'green'}`}>
                         {p.latest_risk_level} Risk
                       </span>
                     </td>
                     <td>
-                      <button className="btn-secondary-light" onClick={() => setSelectedPatient(p)}>
-                        View History
+                      <button className="db-btn-secondary" style={{ padding: '6px 16px', fontSize: '13px' }} onClick={() => setSelectedPatient(p)}>
+                        ACCESS FILE
                       </button>
                     </td>
                   </tr>
@@ -218,18 +214,18 @@ function AdminPage() {
         </div>
 
         {selectedPatient && (
-          <div className="modal-overlay" onClick={() => setSelectedPatient(null)}>
-            <div className="bento-card animate-up" onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: '900px', maxHeight: '90vh', display: 'flex', flexDirection: 'column', padding: 0, overflow: 'hidden' }}>
-              <div style={{ padding: '24px 32px', borderBottom: '1px solid rgba(0,0,0,0.08)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc' }}>
+          <div className="modal-overlay" style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.4)', backdropFilter: 'blur(4px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }} onClick={() => setSelectedPatient(null)}>
+            <div className="db-card animate-db" onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: '900px', maxHeight: '90vh', display: 'flex', flexDirection: 'column', padding: 0, overflow: 'hidden', border: '1px solid var(--db-border)', background: 'var(--db-card)' }}>
+              <div style={{ padding: '24px 32px', borderBottom: '1px solid var(--db-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--db-card)' }}>
                 <div>
-                  <h2 style={{ margin: 0, fontSize: '24px', fontWeight: 800, color: '#0f172a' }}>{selectedPatient.full_name}</h2>
-                  <p style={{ margin: '4px 0 0 0', color: '#64748b', fontSize: '15px' }}>{selectedPatient.email} • {selectedPatient.total_assessments} Total clinical assessments</p>
+                  <h2 style={{ margin: 0, fontSize: '24px', fontWeight: 800, color: 'var(--db-text)' }}>{selectedPatient.full_name}</h2>
+                  <p style={{ margin: '4px 0 0 0', color: 'var(--db-muted)', fontSize: '14px' }}>{selectedPatient.email} • Clinical Activity Log</p>
                 </div>
-                <button onClick={() => setSelectedPatient(null)} style={{ background: 'transparent', border: 'none', fontSize: '24px', color: '#64748b', cursor: 'pointer' }}>✕</button>
+                <button onClick={() => setSelectedPatient(null)} style={{ background: 'transparent', border: 'none', fontSize: '24px', color: 'var(--db-muted)', cursor: 'pointer' }}>✕</button>
               </div>
 
-              <div style={{ padding: '32px', overflowY: 'auto', background: '#f1f5f9', flex: 1 }}>
-                <h3 style={{ margin: '0 0 24px 0', fontSize: '18px', fontWeight: 800, color: '#0f172a' }}>Comprehensive Medical Timeline</h3>
+              <div style={{ padding: '32px', overflowY: 'auto', background: 'var(--db-bg)', flex: 1 }}>
+                <h3 style={{ margin: '0 0 24px 0', fontSize: '16px', fontWeight: 700, color: 'var(--db-text)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Patient Telemetry Timeline</h3>
 
                 {selectedPatient.history.length === 0 ? (
                   <div className="bento-card" style={{ textAlign: 'center', color: '#94a3b8' }}>
@@ -240,88 +236,88 @@ function AdminPage() {
                     {selectedPatient.history.map((record, index) => (
                       <div key={index} className="bento-card" style={{ borderLeft: `6px solid ${record.type === 'diabetes' ? '#00D4FF' : record.type === 'heart' ? '#FF4560' : record.type === 'hypertension' ? '#FFD700' : '#8b5cf6'}` }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
-                          <strong style={{ textTransform: 'capitalize', color: '#0f172a', fontSize: '16px', fontWeight: 800 }}>
+                          <strong style={{ textTransform: 'capitalize', color: 'var(--db-text)', fontSize: '16px', fontWeight: 800 }}>
                             {record.type === 'cbc' ? 'CBC Analysis' : `${record.type} Screening`}
                           </strong>
-                          <span style={{ color: '#64748b', fontSize: '14px', fontWeight: 600 }}>{new Date(record.created_at).toLocaleString()}</span>
+                          <span style={{ color: 'var(--db-muted)', fontSize: '14px', fontWeight: 600 }}>{new Date(record.created_at).toLocaleString()}</span>
                         </div>
 
                         {record.type === 'diabetes' && (
-                          <div style={{ background: '#f8fafc', padding: '16px', borderRadius: '12px' }}>
+                          <div style={{ background: 'var(--db-bg)', padding: '16px', borderRadius: '12px', border: '1px solid var(--db-border)' }}>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', fontSize: '15px' }}>
-                              <div>Prediction: <strong style={{ color: '#0f172a' }}>{record.diabetes_prediction}</strong></div>
-                              <div>Risk Level: <strong style={{ color: '#0f172a' }}>{record.risk_level}</strong></div>
-                              <div>BMI: <strong>{record.bmi}</strong></div>
+                              <div>Prediction: <strong style={{ color: 'var(--db-text)' }}>{record.diabetes_prediction}</strong></div>
+                              <div>Risk Level: <strong style={{ color: 'var(--db-text)' }}>{record.risk_level}</strong></div>
+                              <div>BMI: <strong style={{color: 'var(--db-text)'}}>{record.bmi}</strong></div>
                             </div>
                             <details style={{ marginTop: '16px' }}>
-                              <summary style={{ cursor: 'pointer', color: '#2563eb', fontWeight: 700, fontSize: '14px', outline: 'none', userSelect: 'none' }}>⬇ View Detailed Clinical Data</summary>
-                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '16px', marginTop: '16px', padding: '16px', background: 'white', border: '1px solid rgba(0,0,0,0.08)', borderRadius: '12px' }}>
-                                <div><div style={{ fontSize: '12px', color: '#64748b', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>Glucose</div><div style={{ fontWeight: 600, color: '#0f172a', marginTop: '4px' }}>{record.glucose || 'N/A'} mg/dL</div></div>
-                                <div><div style={{ fontSize: '12px', color: '#64748b', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>Blood Pressure</div><div style={{ fontWeight: 600, color: '#0f172a', marginTop: '4px' }}>{record.blood_pressure || 'N/A'} mmHg</div></div>
-                                <div><div style={{ fontSize: '12px', color: '#64748b', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>Insulin</div><div style={{ fontWeight: 600, color: '#0f172a', marginTop: '4px' }}>{record.insulin || 'N/A'} U/mL</div></div>
-                                <div><div style={{ fontSize: '12px', color: '#64748b', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>Skin Thickness</div><div style={{ fontWeight: 600, color: '#0f172a', marginTop: '4px' }}>{record.skin_thickness || 'N/A'} mm</div></div>
-                                <div><div style={{ fontSize: '12px', color: '#64748b', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>DPF</div><div style={{ fontWeight: 600, color: '#0f172a', marginTop: '4px' }}>{record.diabetes_pedigree_function || 'N/A'}</div></div>
-                                <div><div style={{ fontSize: '12px', color: '#64748b', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>Age</div><div style={{ fontWeight: 600, color: '#0f172a', marginTop: '4px' }}>{record.age || 'N/A'} yrs</div></div>
+                              <summary style={{ cursor: 'pointer', color: 'var(--db-accent)', fontWeight: 700, fontSize: '14px', outline: 'none', userSelect: 'none' }}>⬇ View Detailed Clinical Data</summary>
+                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '16px', marginTop: '16px', padding: '16px', background: 'var(--db-card)', border: '1px solid var(--db-border)', borderRadius: '12px' }}>
+                                <div><div style={{ fontSize: '12px', color: 'var(--db-muted)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>Glucose</div><div style={{ fontWeight: 600, color: 'var(--db-text)', marginTop: '4px' }}>{record.glucose || 'N/A'} mg/dL</div></div>
+                                <div><div style={{ fontSize: '12px', color: 'var(--db-muted)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>Blood Pressure</div><div style={{ fontWeight: 600, color: 'var(--db-text)', marginTop: '4px' }}>{record.blood_pressure || 'N/A'} mmHg</div></div>
+                                <div><div style={{ fontSize: '12px', color: 'var(--db-muted)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>Insulin</div><div style={{ fontWeight: 600, color: 'var(--db-text)', marginTop: '4px' }}>{record.insulin || 'N/A'} U/mL</div></div>
+                                <div><div style={{ fontSize: '12px', color: 'var(--db-muted)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>Skin Thickness</div><div style={{ fontWeight: 600, color: 'var(--db-text)', marginTop: '4px' }}>{record.skin_thickness || 'N/A'} mm</div></div>
+                                <div><div style={{ fontSize: '12px', color: 'var(--db-muted)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>DPF</div><div style={{ fontWeight: 600, color: 'var(--db-text)', marginTop: '4px' }}>{record.diabetes_pedigree_function || 'N/A'}</div></div>
+                                <div><div style={{ fontSize: '12px', color: 'var(--db-muted)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>Age</div><div style={{ fontWeight: 600, color: 'var(--db-text)', marginTop: '4px' }}>{record.age || 'N/A'} yrs</div></div>
                               </div>
                             </details>
                           </div>
                         )}
 
                         {record.type === 'heart' && (
-                          <div style={{ background: '#fff1f2', padding: '16px', borderRadius: '12px' }}>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '8px', color: '#be123c', fontSize: '15px' }}>
+                          <div style={{ background: 'rgba(251, 113, 133, 0.05)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(251, 113, 133, 0.15)' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '8px', color: 'var(--db-crimson)', fontSize: '15px' }}>
                               <div>Heart Disease Prediction: <strong>{record.heart_disease_prediction}</strong></div>
                             </div>
                             <details style={{ marginTop: '16px' }}>
-                              <summary style={{ cursor: 'pointer', color: '#e11d48', fontWeight: 700, fontSize: '14px', outline: 'none', userSelect: 'none' }}>⬇ View Detailed Clinical Data</summary>
-                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '16px', marginTop: '16px', padding: '16px', background: 'white', border: '1px solid #fecdd3', borderRadius: '12px' }}>
-                                <div><div style={{ fontSize: '12px', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>Age</div><div style={{ fontWeight: 600, color: '#0f172a', marginTop: '4px' }}>{record.age || 'N/A'} yrs</div></div>
-                                <div><div style={{ fontSize: '12px', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>Sex</div><div style={{ fontWeight: 600, color: '#0f172a', marginTop: '4px' }}>{record.sex === 1 ? 'Male' : record.sex === 0 ? 'Female' : 'N/A'}</div></div>
-                                <div><div style={{ fontSize: '12px', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>Chest Pain</div><div style={{ fontWeight: 600, color: '#0f172a', marginTop: '4px' }}>Type {record.cp ?? 'N/A'}</div></div>
-                                <div><div style={{ fontSize: '12px', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>Resting BP</div><div style={{ fontWeight: 600, color: '#0f172a', marginTop: '4px' }}>{record.trestbps || 'N/A'} mmHg</div></div>
-                                <div><div style={{ fontSize: '12px', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>Cholesterol</div><div style={{ fontWeight: 600, color: '#0f172a', marginTop: '4px' }}>{record.chol || 'N/A'} mg/dL</div></div>
-                                <div><div style={{ fontSize: '12px', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>Max Heart Rate</div><div style={{ fontWeight: 600, color: '#0f172a', marginTop: '4px' }}>{record.thalach || 'N/A'} bpm</div></div>
+                              <summary style={{ cursor: 'pointer', color: 'var(--db-crimson)', fontWeight: 700, fontSize: '14px', outline: 'none', userSelect: 'none' }}>⬇ View Detailed Clinical Data</summary>
+                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '16px', marginTop: '16px', padding: '16px', background: 'var(--db-card)', border: '1px solid rgba(251, 113, 133, 0.2)', borderRadius: '12px' }}>
+                                <div><div style={{ fontSize: '12px', color: 'var(--db-muted)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>Age</div><div style={{ fontWeight: 600, color: 'var(--db-text)', marginTop: '4px' }}>{record.age || 'N/A'} yrs</div></div>
+                                <div><div style={{ fontSize: '12px', color: 'var(--db-muted)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>Sex</div><div style={{ fontWeight: 600, color: 'var(--db-text)', marginTop: '4px' }}>{record.sex === 1 ? 'Male' : record.sex === 0 ? 'Female' : 'N/A'}</div></div>
+                                <div><div style={{ fontSize: '12px', color: 'var(--db-muted)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>Chest Pain</div><div style={{ fontWeight: 600, color: 'var(--db-text)', marginTop: '4px' }}>Type {record.cp ?? 'N/A'}</div></div>
+                                <div><div style={{ fontSize: '12px', color: 'var(--db-muted)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>Resting BP</div><div style={{ fontWeight: 600, color: 'var(--db-text)', marginTop: '4px' }}>{record.trestbps || 'N/A'} mmHg</div></div>
+                                <div><div style={{ fontSize: '12px', color: 'var(--db-muted)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>Cholesterol</div><div style={{ fontWeight: 600, color: 'var(--db-text)', marginTop: '4px' }}>{record.chol || 'N/A'} mg/dL</div></div>
+                                <div><div style={{ fontSize: '12px', color: 'var(--db-muted)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>Max Heart Rate</div><div style={{ fontWeight: 600, color: 'var(--db-text)', marginTop: '4px' }}>{record.thalach || 'N/A'} bpm</div></div>
                               </div>
                             </details>
                           </div>
                         )}
 
                         {record.type === 'hypertension' && (
-                          <div style={{ background: '#f5f3ff', padding: '16px', borderRadius: '12px' }}>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '8px', color: '#6d28d9', fontSize: '15px' }}>
+                          <div style={{ background: 'rgba(139, 92, 246, 0.05)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(139, 92, 246, 0.15)' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '8px', color: '#a78bfa', fontSize: '15px' }}>
                               <div>Hypertension Prediction: <strong>{record.hypertension_prediction}</strong></div>
                             </div>
                             <details style={{ marginTop: '16px' }}>
-                              <summary style={{ cursor: 'pointer', color: '#7c3aed', fontWeight: 700, fontSize: '14px', outline: 'none', userSelect: 'none' }}>⬇ View Detailed Clinical Data</summary>
-                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '16px', marginTop: '16px', padding: '16px', background: 'white', border: '1px solid #ddd6fe', borderRadius: '12px' }}>
-                                <div><div style={{ fontSize: '12px', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>Age</div><div style={{ fontWeight: 600, color: '#0f172a', marginTop: '4px' }}>{record.age || 'N/A'} yrs</div></div>
-                                <div><div style={{ fontSize: '12px', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>Sex</div><div style={{ fontWeight: 600, color: '#0f172a', marginTop: '4px' }}>{record.sex === 1 ? 'Male' : record.sex === 0 ? 'Female' : 'N/A'}</div></div>
-                                <div><div style={{ fontSize: '12px', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>BMI</div><div style={{ fontWeight: 600, color: '#0f172a', marginTop: '4px' }}>{record.bmi || 'N/A'}</div></div>
-                                <div><div style={{ fontSize: '12px', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>Heart Rate</div><div style={{ fontWeight: 600, color: '#0f172a', marginTop: '4px' }}>{record.heart_rate || 'N/A'} bpm</div></div>
-                                <div><div style={{ fontSize: '12px', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>Active Level</div><div style={{ fontWeight: 600, color: '#0f172a', marginTop: '4px' }}>Level {record.activity_level ?? 'N/A'}</div></div>
-                                <div><div style={{ fontSize: '12px', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>Smoker</div><div style={{ fontWeight: 600, color: '#0f172a', marginTop: '4px' }}>{record.smoker === 1 ? 'Yes' : record.smoker === 0 ? 'No' : 'N/A'}</div></div>
-                                <div><div style={{ fontSize: '12px', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>Family History</div><div style={{ fontWeight: 600, color: '#0f172a', marginTop: '4px' }}>{record.family_history === 1 ? 'Yes' : record.family_history === 0 ? 'No' : 'N/A'}</div></div>
+                              <summary style={{ cursor: 'pointer', color: '#a78bfa', fontWeight: 700, fontSize: '14px', outline: 'none', userSelect: 'none' }}>⬇ View Detailed Clinical Data</summary>
+                              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '16px', marginTop: '16px', padding: '16px', background: 'var(--db-card)', border: '1px solid rgba(139, 92, 246, 0.2)', borderRadius: '12px' }}>
+                                <div><div style={{ fontSize: '12px', color: 'var(--db-muted)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>Age</div><div style={{ fontWeight: 600, color: 'var(--db-text)', marginTop: '4px' }}>{record.age || 'N/A'} yrs</div></div>
+                                <div><div style={{ fontSize: '12px', color: 'var(--db-muted)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>Sex</div><div style={{ fontWeight: 600, color: 'var(--db-text)', marginTop: '4px' }}>{record.sex === 1 ? 'Male' : record.sex === 0 ? 'Female' : 'N/A'}</div></div>
+                                <div><div style={{ fontSize: '12px', color: 'var(--db-muted)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>BMI</div><div style={{ fontWeight: 600, color: 'var(--db-text)', marginTop: '4px' }}>{record.bmi || 'N/A'}</div></div>
+                                <div><div style={{ fontSize: '12px', color: 'var(--db-muted)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>Heart Rate</div><div style={{ fontWeight: 600, color: 'var(--db-text)', marginTop: '4px' }}>{record.heart_rate || 'N/A'} bpm</div></div>
+                                <div><div style={{ fontSize: '12px', color: 'var(--db-muted)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>Active Level</div><div style={{ fontWeight: 600, color: 'var(--db-text)', marginTop: '4px' }}>Level {record.activity_level ?? 'N/A'}</div></div>
+                                <div><div style={{ fontSize: '12px', color: 'var(--db-muted)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>Smoker</div><div style={{ fontWeight: 600, color: 'var(--db-text)', marginTop: '4px' }}>{record.smoker === 1 ? 'Yes' : record.smoker === 0 ? 'No' : 'N/A'}</div></div>
+                                <div><div style={{ fontSize: '12px', color: 'var(--db-muted)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>Family History</div><div style={{ fontWeight: 600, color: 'var(--db-text)', marginTop: '4px' }}>{record.family_history === 1 ? 'Yes' : record.family_history === 0 ? 'No' : 'N/A'}</div></div>
                               </div>
                             </details>
                           </div>
                         )}
 
                         {record.type === 'cbc' && (
-                          <div style={{ background: '#ecfdf5', padding: '16px', borderRadius: '12px' }}>
-                            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '8px', color: '#047857', fontSize: '15px' }}>
+                          <div style={{ background: 'rgba(16, 185, 129, 0.05)', padding: '16px', borderRadius: '12px', border: '1px solid rgba(16, 185, 129, 0.15)' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '8px', color: 'var(--db-emerald)', fontSize: '15px' }}>
                               <div><strong>CBC Complete Blood Count Results Available</strong></div>
                               {record.interpretation && record.interpretation.summary && (
-                                <div style={{ fontStyle: 'italic', fontSize: '14px', lineHeight: 1.5 }}>"{record.interpretation.summary}"</div>
+                                <div style={{ fontStyle: 'italic', fontSize: '14px', lineHeight: 1.5, color: 'var(--db-muted)' }}>"{record.interpretation.summary}"</div>
                               )}
                             </div>
                             {record.cbc && Object.keys(record.cbc).length > 0 && (
                               <details style={{ marginTop: '16px' }}>
-                                <summary style={{ cursor: 'pointer', color: '#059669', fontWeight: 700, fontSize: '14px', outline: 'none', userSelect: 'none' }}>⬇ View Detailed Clinical Data</summary>
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '16px', marginTop: '16px', padding: '16px', background: 'white', border: '1px solid #10b981', borderRadius: '12px' }}>
+                                <summary style={{ cursor: 'pointer', color: 'var(--db-emerald)', fontWeight: 700, fontSize: '14px', outline: 'none', userSelect: 'none' }}>⬇ View Detailed Clinical Data</summary>
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '16px', marginTop: '16px', padding: '16px', background: 'var(--db-card)', border: '1px solid var(--db-emerald)', borderRadius: '12px' }}>
                                   {Object.entries(record.cbc).map(([key, data]) => (
                                     <div key={key}>
-                                      <h4 style={{ margin: '0 0 4px 0', fontSize: '12px', color: '#64748b', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>{data.label}</h4>
-                                      <div style={{ fontSize: '15px', fontWeight: 700, color: data.status === 'Low' || data.status === 'High' ? '#e11d48' : '#0f172a' }}>
+                                      <h4 style={{ margin: '0 0 4px 0', fontSize: '12px', color: 'var(--db-muted)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.05em' }}>{data.label}</h4>
+                                      <div style={{ fontSize: '15px', fontWeight: 700, color: data.status === 'Low' || data.status === 'High' ? 'var(--db-crimson)' : 'var(--db-text)' }}>
                                         {data.value !== null && data.value !== undefined ? data.value : 'N/A'} {data.unit || ''}
                                       </div>
                                     </div>
@@ -337,8 +333,8 @@ function AdminPage() {
                 )}
               </div>
 
-              <div style={{ padding: '24px 32px', borderTop: '1px solid rgba(0,0,0,0.08)', background: '#f8fafc', display: 'flex', justifyContent: 'flex-end' }}>
-                <button className="btn-secondary-light" onClick={() => setSelectedPatient(null)}>Close File</button>
+               <div style={{ padding: '24px 32px', borderTop: '1px solid var(--db-border)', background: 'var(--db-card)', display: 'flex', justifyContent: 'flex-end' }}>
+                <button className="db-btn-secondary" onClick={() => setSelectedPatient(null)}>CLOSE FILE</button>
               </div>
             </div>
           </div>

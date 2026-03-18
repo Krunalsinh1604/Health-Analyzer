@@ -121,43 +121,45 @@ function Login() {
         <div className="grid-bg" style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none' }} />
         
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem', position: 'relative', zIndex: 1 }}>
-          <div className="bento-card animate-up" style={{ maxWidth: '440px', width: '100%', padding: '40px' }}>
-            <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-              <div style={{ fontSize: '36px', marginBottom: '16px' }}>⚕️</div>
-              <h2 style={{ fontSize: '28px', fontWeight: 800, margin: '0 0 8px' }}>Secure Login</h2>
-              <p style={{ color: C.lightMuted, margin: 0, fontSize: '15px' }}>Welcome back to Health Analyzer</p>
+          <div className="db-card animate-db" style={{ maxWidth: '440px', width: '100%', padding: '48px', border: '1px solid var(--db-border)' }}>
+            <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+              <div style={{ fontSize: '40px', marginBottom: '16px' }}>🩺</div>
+              <h2 style={{ fontSize: '28px', fontWeight: 800, margin: '0 0 8px', color: 'var(--db-text)', letterSpacing: '-0.02em' }}>Secure Login</h2>
+              <p style={{ color: 'var(--db-muted)', margin: 0, fontSize: '15px' }}>Access your clinical dashboard</p>
             </div>
 
-            {error && <div style={{ background: C.crimsonBg, color: C.crimson, padding: '12px', borderRadius: '8px', fontSize: '14px', marginBottom: '20px', textAlign: 'center', fontWeight: 500 }}>{error}</div>}
+            {error && <div style={{ background: '#fef2f2', color: 'var(--db-crimson)', padding: '12px', borderRadius: '12px', fontSize: '14px', marginBottom: '24px', textAlign: 'center', fontWeight: 600, border: '1px solid #fee2e2' }}>{error}</div>}
 
-            <form onSubmit={handlePasswordLogin} className="field-light">
+            <form onSubmit={handlePasswordLogin} className="db-input-group">
               <div style={{ display: 'grid', gap: '20px' }}>
-                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <span style={{ fontSize: '14px', fontWeight: 600, color: C.lightText }}>Email or Mobile Number</span>
+                <label style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--db-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Email / Mobile</span>
                   <input
                     type="text"
+                    className="db-input"
                     value={loginId}
                     onChange={(e) => setLoginId(e.target.value)}
                     required
-                    style={{ padding: '12px', borderRadius: '8px', border: `1px solid ${C.lightBorder}`, width: '100%', outline: 'none' }}
+                    placeholder="clinical@example.com"
                   />
                 </label>
 
-                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <span style={{ fontSize: '14px', fontWeight: 600, color: C.lightText }}>Password</span>
+                <label style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--db-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Security Key</span>
                   <input
                     type="password"
+                    className="db-input"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
-                    style={{ padding: '12px', borderRadius: '8px', border: `1px solid ${C.lightBorder}`, width: '100%', outline: 'none' }}
+                    placeholder="••••••••"
                   />
                 </label>
               </div>
 
               <div style={{ marginTop: '32px' }}>
-                <button type="submit" className="btn-primary" disabled={loggingIn} style={{ width: '100%', padding: '14px', fontSize: '16px' }}>
-                  {loggingIn ? "Logging in..." : "Login"}
+                <button type="submit" className="db-btn-primary" disabled={loggingIn} style={{ width: '100%', padding: '16px', fontSize: '16px' }}>
+                  {loggingIn ? "VERIFYING..." : "ACCESS DASHBOARD"}
                 </button>
               </div>
 
@@ -165,12 +167,12 @@ function Login() {
                 <button
                   type="button"
                   onClick={() => setShowForgotModal(true)}
-                  style={{ background: "none", border: "none", color: C.primary, cursor: "pointer", fontSize: "14px", fontWeight: 600 }}
+                  style={{ background: "none", border: "none", color: 'var(--db-accent)', cursor: "pointer", fontSize: "14px", fontWeight: 700 }}
                 >
-                  Forgot Password?
+                  Retrieve Access?
                 </button>
-                <Link to="/register" style={{ fontSize: "14px", color: C.lightMuted, fontWeight: 500, textDecoration: 'none' }}>
-                  Register here <span aria-hidden="true">&rarr;</span>
+                <Link to="/register" style={{ fontSize: "14px", color: 'var(--db-muted)', fontWeight: 600, textDecoration: 'none' }}>
+                  New Registry <span aria-hidden="true">&rarr;</span>
                 </Link>
               </div>
             </form>
@@ -179,11 +181,11 @@ function Login() {
       </div>
 
       {showForgotModal && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }} onClick={closeForgotModal}>
-          <div className="bento-card animate-up" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '440px', width: '100%', padding: '32px' }}>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.4)', backdropFilter: 'blur(4px)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }} onClick={closeForgotModal}>
+          <div className="db-card animate-db" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '440px', width: '100%', padding: '32px', border: '1px solid var(--db-border)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-              <h2 style={{ fontSize: '20px', fontWeight: 800, margin: 0 }}>{forgotStep === 1 ? "Forgot Password" : "Reset Password"}</h2>
-              <button onClick={closeForgotModal} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', color: C.lightMuted }}>&times;</button>
+              <h2 style={{ fontSize: '20px', fontWeight: 800, margin: 0, color: 'var(--db-text)' }}>{forgotStep === 1 ? "Credential Recovery" : "Override Security Key"}</h2>
+              <button onClick={closeForgotModal} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', color: 'var(--db-muted)' }}>&times;</button>
             </div>
             
             <form onSubmit={handleForgotPassword} className="field-light">
@@ -196,11 +198,12 @@ function Login() {
                     <span style={{ fontSize: '14px', fontWeight: 600, color: C.lightText }}>Mobile Number</span>
                     <input
                       type="text"
+                      className="db-input"
                       value={forgotMobile}
                       onChange={(e) => setForgotMobile(e.target.value)}
                       required
                       placeholder="e.g. 1234567890"
-                      style={{ padding: '12px', borderRadius: '8px', border: `1px solid ${C.lightBorder}`, width: '100%', outline: 'none' }}
+                      style={{ width: '100%' }}
                     />
                   </label>
                 </>
@@ -214,22 +217,24 @@ function Login() {
                       <span style={{ fontSize: '14px', fontWeight: 600, color: C.lightText }}>OTP</span>
                       <input
                         type="text"
+                        className="db-input"
                         value={forgotOtp}
                         onChange={(e) => setForgotOtp(e.target.value)}
                         required
                         placeholder="6-digit OTP"
                         maxLength="6"
-                        style={{ padding: '12px', borderRadius: '8px', border: `1px solid ${C.lightBorder}`, width: '100%', outline: 'none', letterSpacing: '4px', textAlign: 'center', fontSize: '18px', fontWeight: 700 }}
+                        style={{ width: '100%', letterSpacing: '4px', textAlign: 'center', fontSize: '18px', fontWeight: 700 }}
                       />
                     </label>
                     <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
                       <span style={{ fontSize: '14px', fontWeight: 600, color: C.lightText }}>New Password</span>
                       <input
                         type="password"
+                        className="db-input"
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
                         required
-                        style={{ padding: '12px', borderRadius: '8px', border: `1px solid ${C.lightBorder}`, width: '100%', outline: 'none' }}
+                        style={{ width: '100%' }}
                       />
                     </label>
                   </div>
@@ -237,10 +242,10 @@ function Login() {
               )}
 
               <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px", marginTop: "32px" }}>
-                <button type="button" className="btn-secondary-light" onClick={closeForgotModal}>
+                <button type="button" className="db-btn-secondary" onClick={closeForgotModal}>
                   Cancel
                 </button>
-                <button type="submit" className="btn-primary" disabled={forgotLoading}>
+                <button type="submit" className="db-btn-primary" disabled={forgotLoading}>
                   {forgotLoading ? "Processing..." : forgotStep === 1 ? "Send OTP" : "Reset Password"}
                 </button>
               </div>

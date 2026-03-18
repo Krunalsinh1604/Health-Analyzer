@@ -16,8 +16,7 @@
   content: '';
   position: absolute;
   inset: 0;
-  /* Very subtle gradient just to handle readability if needed, no blur */
-  background: linear-gradient(to top, rgba(2, 6, 23, 0.4), rgba(255, 255, 255, 0));
+  background: #1e293b;
   z-index: -1;
 }
 
@@ -27,7 +26,7 @@
   width: 100%;
   max-width: 460px;
   text-align: center;
-  color: #0f172a;
+  color: var(--db-text);
   position: relative;
   z-index: 2;
   /* Reduced translateY so long forms like Register fit nicely */
@@ -62,7 +61,7 @@
 .auth-logo {
   font-size: 1.5rem;
   font-weight: 800;
-  color: #0f172a;
+  color: var(--db-text);
   margin-bottom: 2rem;
   display: flex;
   align-items: center;
@@ -74,7 +73,7 @@
 
 .auth-card h2 {
   margin-bottom: 0.5rem;
-  color: #0f172a;
+  color: var(--db-text);
   font-size: 2.2rem;
   font-weight: 800;
   letter-spacing: -0.5px;
@@ -82,7 +81,7 @@
 }
 
 .auth-card p {
-  color: #334155;
+  color: var(--db-muted);
   margin-bottom: 2rem;
   font-size: 1.05rem;
   font-weight: 500;
@@ -99,7 +98,7 @@
   display: block;
   margin-bottom: 0.6rem;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--db-text);
   font-size: 0.85rem;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -109,15 +108,14 @@
 .form-group input {
   width: 100%;
   padding: 1rem 1.25rem;
-  background: rgba(255, 255, 255, 0.85);
-  /* Frosty white input */
-  border: 1px solid rgba(255, 255, 255, 0.9);
-  border-radius: 12px;
+  background: #1e293b;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
   font-size: 1.05rem;
-  color: #0f172a;
+  color: var(--db-text);
   font-weight: 600;
   transition: all 0.3s ease;
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
 }
 
 .form-group input::placeholder {
@@ -127,22 +125,22 @@
 
 .form-group input:focus {
   outline: none;
-  background: #ffffff;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15), 0 8px 16px rgba(0, 0, 0, 0.08);
+  background: #1e293b;
+  border-color: var(--db-accent);
+  box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.15);
 }
 
 .auth-btn {
   width: 100%;
   padding: 1.1rem;
-  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  background: var(--btn-gradient);
   color: white;
   border: none;
   border-radius: 12px;
   font-size: 1.1rem;
   font-weight: 700;
   cursor: pointer;
-  box-shadow: 0 10px 20px -5px rgba(59, 130, 246, 0.5);
+  box-shadow: 0 10px 20px -5px rgba(13, 148, 136, 0.4);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   margin-top: 2rem;
   /* Added margin on top of button */
@@ -152,8 +150,8 @@
 
 .auth-btn:hover {
   transform: translateY(-3px);
-  box-shadow: 0 15px 25px -5px rgba(59, 130, 246, 0.7);
-  background: linear-gradient(135deg, #2563eb, #7c3aed);
+  box-shadow: 0 15px 25px -5px rgba(13, 148, 136, 0.6);
+  background: var(--btn-gradient);
 }
 
 .auth-btn:active {
@@ -180,13 +178,13 @@
 .auth-link {
   margin-top: 2rem;
   font-size: 1rem;
-  color: #334155;
+  color: var(--db-muted);
   font-weight: 600;
   text-shadow: 0 1px 4px rgba(255, 255, 255, 0.8);
 }
 
 .auth-link a {
-  color: #2563eb;
+  color: var(--db-accent);
   text-decoration: none;
   font-weight: 700;
   transition: color 0.2s;
@@ -205,7 +203,7 @@
 .auth-link-btn {
   background: transparent;
   border: none;
-  color: #2563eb;
+  color: var(--db-accent);
   font-size: 0.875rem;
   font-weight: 700;
   padding: 0;
@@ -229,13 +227,13 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   color: #E8EDF8;
-  background-color: #070B14;
+  background-color: #121212;
   --ink: #E8EDF8;
   --muted: #6B7A99;
   --card: #080D18;
   --line: rgba(255, 255, 255, 0.08);
   --soft: #0C1220;
-  --shadow: 0 20px 40px rgba(0,0,0,0.6), 0 0 20px rgba(0,212,255,0.03);
+  --shadow: 0 1px 3px rgba(0,0,0,0.1), 0 10px 15px -5px rgba(0,0,0,0.05);
 }
 
 * {
@@ -245,10 +243,9 @@
 body {
   margin: 0;
   min-height: 100vh;
-  background: #070B14;
-  background-image: radial-gradient(circle at 15% 50%, rgba(0, 212, 255, 0.05), transparent 40%),
-                    radial-gradient(circle at 85% 30%, rgba(255, 179, 0, 0.03), transparent 40%);
-  color: var(--ink);
+  background: #1e293b;
+  background-image: radial-gradient(circle at 15% 50%, rgba(20, 184, 166, 0.05), transparent 40%);
+  color: #e2e8f0;
 }
 
 a {
@@ -314,9 +311,9 @@ a {
 .clinical-input,
 .clinical-select {
   padding: 0.875rem 1rem;
-  border: 1px solid var(--line);
+  border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 10px;
-  background: var(--soft);
+  background: #1e293b;
   color: var(--ink);
   font-size: 0.95rem;
   font-family: inherit;
@@ -327,9 +324,9 @@ a {
 .clinical-input:focus,
 .clinical-select:focus {
   outline: none;
-  border-color: #00D4FF;
-  background: var(--card);
-  box-shadow: 0 0 0 4px rgba(0, 212, 255, 0.15);
+  border-color: var(--db-accent);
+  background: var(--db-card);
+  box-shadow: 0 0 0 4px rgba(13, 148, 136, 0.15);
 }
 
 .clinical-input:hover,
@@ -339,14 +336,14 @@ a {
 
 .clinical-btn {
   background: transparent;
-  color: #00D4FF;
+  color: var(--db-accent);
   padding: 1rem 2.5rem;
   border-radius: 10px;
-  border: 1px solid rgba(0, 212, 255, 0.4);
+  border: 1px solid rgba(13, 148, 136, 0.4);
   font-weight: 600;
   font-size: 1.1rem;
   cursor: pointer;
-  box-shadow: 0 0 20px rgba(0, 212, 255, 0.1);
+  box-shadow: 0 0 20px rgba(13, 148, 136, 0.1);
   transition: all 0.2s ease;
   display: inline-flex;
   align-items: center;
@@ -579,7 +576,7 @@ a {
 }
 
 .footer-section ul li a:hover {
-  color: #00D4FF;
+  color: var(--db-accent);
 }
 
 .footer-bottom {
@@ -598,12 +595,12 @@ a {
 .animate-up { animation: fadeUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; opacity:0; }
 
 .bento-card {
-  background: #ffffff;
-  border-radius: 24px;
-  border: 1px solid rgba(0,0,0,0.08);
-  box-shadow: 0 10px 15px -3px rgba(0,0,0,0.05), 0 4px 6px -4px rgba(0,0,0,0.05);
+  background: #2d3748;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 10px 15px -10px rgba(0, 0, 0, 0.3);
   padding: 24px;
-  transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+  transition: all 0.3s ease;
   overflow: hidden;
   position: relative;
   z-index: 1;
@@ -665,11 +662,11 @@ a {
 }
 
 .page-container {
-  background: #f8fafc;
+  background: #1e293b;
   min-height: 100vh;
   position: relative;
   overflow: hidden;
-  color: #0f172a;
+  color: var(--db-text);
 }
 .page-inner {
   max-width: 1400px;
@@ -683,32 +680,32 @@ a {
   font-weight: 800;
   letter-spacing: -0.02em;
   margin: 0 0 16px;
-  color: #0f172a;
+  color: #e2e8f0;
 }
 .page-desc {
   font-size: 18px;
-  color: #475569;
+  color: #94a3b8;
   line-height: 1.6;
   max-width: 600px;
   margin: 0;
 }
 .tabs-light {
-  display: flex; gap: 8px; background: #f1f5f9; padding: 6px; border-radius: 12px; display: inline-flex;
+  display: flex; gap: 8px; background: #2d3748; padding: 6px; border-radius: 12px; display: inline-flex;
 }
 .tabs-light button {
-  background: transparent; color: #475569; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s; box-shadow: none;
+  background: transparent; color: #94a3b8; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.2s; box-shadow: none;
 }
 .tabs-light button.active {
-  background: #fff; color: #0f172a; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+  background: #18181b; color: var(--db-text); box-shadow: 0 2px 4px rgba(0,0,0,0.4);
 }
 .field-light {
-  display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600; color: #475569;
+  display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600; color: #94a3b8;
 }
 .field-light input, .field-light select {
-  padding: 12px 16px; border-radius: 10px; border: 1px solid rgba(0,0,0,0.08); background: #f8fafc; font-size: 15px; color: #0f172a; transition: 0.2s;
+  padding: 12px 16px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.1); background: #1e293b; font-size: 15px; color: #e2e8f0; transition: 0.2s;
 }
 .field-light input:focus, .field-light select:focus {
-  outline: none; border-color: #3b82f6; box-shadow: 0 0 0 4px rgba(59,130,246,0.1); background: #ffffff;
+  outline: none; border-color: var(--db-accent); box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.15); background: #1e293b;
 }
 .table-light {
   width: 100%; border-collapse: collapse; font-size: 14px;
