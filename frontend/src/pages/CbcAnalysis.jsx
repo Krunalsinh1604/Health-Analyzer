@@ -3,8 +3,8 @@ import { NavLink } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid } from "recharts";
 import Navbar from "../components/Navbar";
-import dashboardHero from "../assets/dashboard-hero.png";
 import { toast } from "react-toastify";
+import { C } from "../theme";
 
 function CbcAnalysisPage() {
   const { user, logout, authFetch } = useAuth();
@@ -193,347 +193,265 @@ function CbcAnalysisPage() {
   // Helper for individual gauges
   const MetricGauge = ({ label, value, unit, status }) => {
     // determine color based on status
-    const color = status === 'Normal' ? '#22c55e' : (status === 'Low' ? '#f59e0b' : '#ef4444');
-    // simple ring data
-    const data = [{ value: 1 }];
+    const color = status === 'Normal' ? C.emerald : (status === 'Low' ? C.amber : C.crimson);
+    const bg = status === 'Normal' ? C.emeraldBg : (status === 'Low' ? C.amberBg : C.crimsonBg);
 
     return (
-      <div className="card" style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ width: '120px', height: '120px', position: 'relative' }}>
-          <ResponsiveContainer>
-            <PieChart>
-              <Pie
-                data={data}
-                cx="50%"
-                cy="50%"
-                innerRadius={40}
-                outerRadius={55}
-                dataKey="value"
-                stroke="none"
-              >
-                <Cell fill={color} />
-              </Pie>
-            </PieChart>
-          </ResponsiveContainer>
-          <div style={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            textAlign: 'center',
-            width: '80%'
-          }}>
-            <strong style={{ display: 'block', fontSize: '1.1rem', color: 'var(--text-main)', lineHeight: 1.2 }}>{value}</strong>
-            <span style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>{unit}</span>
-          </div>
+      <div style={{ display: 'flex', flexDirection: 'column', padding: '16px', background: C.lightBg2, borderRadius: '12px', border: `1px solid ${C.lightBorder}` }}>
+        <div style={{ fontSize: '13px', fontWeight: 600, color: C.lightMuted, textTransform: 'uppercase', marginBottom: '8px' }}>{label}</div>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: '4px', marginBottom: '12px' }}>
+           <span style={{ fontSize: '24px', fontWeight: 800, color: C.lightText, fontFamily: "'JetBrains Mono', monospace" }}>{value}</span>
+           <span style={{ fontSize: '12px', color: C.lightMuted }}>{unit}</span>
         </div>
-        <div style={{ textAlign: 'center', marginTop: '1rem' }}>
-          <h4 style={{ margin: '0 0 0.5rem', fontSize: '0.9rem' }}>{label}</h4>
-          <span className={`badge ${status === 'Normal' ? 'ok' : 'alert'}`}>{status}</span>
+        <div>
+           <span style={{ display: 'inline-block', background: bg, color: color, padding: '4px 8px', borderRadius: '6px', fontSize: '12px', fontWeight: 700 }}>{status}</span>
         </div>
       </div>
     );
   };
 
   return (
-    <div className="app">
+    <div className="page-container">
+      <div className="grid-bg-light" style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none' }} />
       <Navbar />
 
-      <div className="dashboard-header" style={{ marginBottom: '2rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
-          <div style={{ flex: 1 }}>
-            <h2 style={{ fontSize: '1.8rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--text-main)' }}>Hematology Intelligence</h2>
-            <p style={{ color: 'var(--muted)', maxWidth: '600px' }}>
-              Advanced differential analysis of blood reports. Upload a PDF or simple photo of your report to get instant clinical insights and visualizations.
-            </p>
+      <div className="page-inner">
+        <div className="animate-up" style={{ marginBottom: '40px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '20px' }}>
+          <div>
+            <span className="feature-pill">HEMATOLOGY INTELLIGENCE</span>
+            <h2 className="page-title">Advanced Differential Analysis</h2>
+            <p className="page-desc">Upload a PDF or simple photo of your report to get instant clinical insights and visualizations.</p>
           </div>
+          <button className="btn-secondary-light" onClick={() => setShowHistory(!showHistory)}>
+            {showHistory ? "Hide History" : "View My Report History"}
+          </button>
         </div>
-      </div>
 
-      <div style={{ padding: '0 0.5rem', marginBottom: '2rem', display: 'flex', justifyContent: 'flex-end' }}>
-        <button className="secondary" onClick={() => setShowHistory(!showHistory)}>
-          {showHistory ? "Hide History" : "View My Report History"}
-        </button>
-      </div>
+        {showHistory && (
+          <section className="bento-card animate-up" style={{ animationDelay: '0.1s', marginBottom: '40px', padding: '32px' }}>
+             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                <h3 style={{ fontSize: '20px', fontWeight: 800, margin: 0 }}>My Report History</h3>
+                <div className="tabs-light">
+                  <button className={historyTab === 'table' ? 'active' : ''} onClick={() => setHistoryTab('table')}>Table</button>
+                  <button className={historyTab === 'trends' ? 'active' : ''} onClick={() => setHistoryTab('trends')}>Trends</button>
+                </div>
+             </div>
+             {myReports.length === 0 ? <p style={{ color: C.lightMuted }}>No reports found.</p> : (
+               <>
+                 {historyTab === 'table' ? (
+                   <div style={{ overflowX: 'auto', borderRadius: '12px', border: `1px solid ${C.lightBorder}` }}>
+                     <table className="table-light">
+                       <thead><tr><th>Date</th><th>Summary</th><th>Source</th></tr></thead>
+                       <tbody>
+                         {myReports.map(r => (
+                           <tr key={r.id}>
+                             <td style={{ fontWeight: 600 }}>{new Date(r.created_at).toLocaleDateString()}</td>
+                             <td>{r.interpretation?.summary || "No summary"}</td>
+                             <td><span style={{ background: C.lightBg2, padding: '4px 8px', borderRadius: '6px', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase' }}>{r.source}</span></td>
+                           </tr>
+                         ))}
+                       </tbody>
+                     </table>
+                   </div>
+                 ) : (
+                   <div style={{ width: '100%', height: 300, background: '#fff', padding: '20px', borderRadius: '12px', border: `1px solid ${C.lightBorder}` }}>
+                     <ResponsiveContainer>
+                        <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={C.lightBorder} />
+                          <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: C.lightMuted }} />
+                          <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: C.lightMuted }} />
+                          <Tooltip contentStyle={{ borderRadius: '12px', border: `1px solid ${C.lightBorder}`, boxShadow: C.shadowCard }} />
+                          <Legend wrapperStyle={{ paddingTop: '20px' }} />
+                          <Line type="monotone" dataKey="Hemoglobin" stroke={C.crimson} strokeWidth={3} dot={{ r: 4 }} name="Hemoglobin (g/dL)" />
+                          <Line type="monotone" dataKey="RBC" stroke={C.amber} strokeWidth={3} dot={{ r: 4 }} name="RBC" />
+                          <Line type="monotone" dataKey="WBC" stroke={C.blueBright} strokeWidth={3} dot={{ r: 4 }} name="WBC" />
+                          <Line type="monotone" dataKey="Platelets" stroke={C.purple} strokeWidth={3} dot={{ r: 4 }} name="Platelets" />
+                        </LineChart>
+                     </ResponsiveContainer>
+                   </div>
+                 )}
+               </>
+             )}
+          </section>
+        )}
 
-      {showHistory && (
-        <section className="history-section card" style={{ marginBottom: '2rem' }}>
-          <div className="card-header">
-            <h3>My Report History</h3>
-            <div className="tabs">
-              <button
-                className={historyTab === 'table' ? 'active' : ''}
-                onClick={() => setHistoryTab('table')}
-              >
-                Table
-              </button>
-              <button
-                className={historyTab === 'trends' ? 'active' : ''}
-                onClick={() => setHistoryTab('trends')}
-              >
-                Trends
-              </button>
-            </div>
-          </div>
+        <div className="layout animate-up" style={{ animationDelay: '0.2s', display: 'grid', gridTemplateColumns: 'minmax(0, 1.8fr) minmax(0, 1fr)', gap: '24px', marginBottom: '32px' }}>
+          
+          <section className="panel" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            <div className="bento-card">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px', marginBottom: '24px' }}>
+                <div>
+                  <h3 style={{ fontSize: '20px', fontWeight: 800, margin: '0 0 8px' }}>Report Intake</h3>
+                  <p style={{ color: C.lightMuted, margin: 0 }}>Upload a PDF/Image or enter values manually.</p>
+                </div>
+                <div className="tabs-light">
+                  <button className={intakeTab === 'upload' ? 'active' : ''} onClick={() => setIntakeTab('upload')}>Upload</button>
+                  <button className={intakeTab === 'manual' ? 'active' : ''} onClick={() => setIntakeTab('manual')}>Manual Entry</button>
+                </div>
+              </div>
 
-          {myReports.length === 0 ? <p>No reports found.</p> : (
-            <>
-              {historyTab === 'table' ? (
-                <div className="table-wrap">
-                  <table>
-                    <thead>
-                      <tr>
-                        <th>Date</th>
-                        <th>Summary</th>
-                        <th>Source</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {myReports.map(r => (
-                        <tr key={r.id}>
-                          <td>{new Date(r.created_at).toLocaleDateString()}</td>
-                          <td>{r.interpretation?.summary || "No summary"}</td>
-                          <td>{r.source}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+              {intakeTab === 'upload' ? (
+                <div style={{ padding: '40px 20px', border: `2px dashed ${C.lightBorder}`, borderRadius: '16px', textAlign: 'center', background: C.lightBg2, transition: '0.2s' }}>
+                  <div style={{ marginBottom: '16px', background: '#fff', width: '64px', height: '64px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', boxShadow: C.shadowCard }}>
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke={C.blue} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                      <polyline points="17 8 12 3 7 8" />
+                      <line x1="12" y1="3" x2="12" y2="15" />
+                    </svg>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px', flexWrap: 'wrap' }}>
+                    <input type="file" accept="application/pdf, image/*" onChange={(e) => setPdfFile(e.target.files[0])} style={{ padding: '10px', background: '#fff', borderRadius: '8px', border: `1px solid ${C.lightBorder}` }} />
+                    <button onClick={uploadPdf} className="btn-primary" style={{ padding: '12px 24px' }}>Analyze Report</button>
+                  </div>
+                  <p style={{ marginTop: '16px', fontSize: '14px', color: C.lightMuted }}>Supports PDF, JPG, PNG. Ensure text is clear and readable.</p>
+                  {pdfError && <p style={{ color: C.crimson, marginTop: '16px', fontWeight: 600 }}>{pdfError}</p>}
                 </div>
               ) : (
-                <div style={{ width: '100%', height: 300 }}>
-                  <ResponsiveContainer>
-                    <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="date" />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      <Line type="monotone" dataKey="Hemoglobin" stroke="#ef4444" name="Hemoglobin (g/dL)" />
-                      <Line type="monotone" dataKey="RBC" stroke="#f97316" name="RBC (mill/cumm)" />
-                      <Line type="monotone" dataKey="WBC" stroke="#3b82f6" name="WBC (x1000/cumm)" />
-                      <Line type="monotone" dataKey="Platelets" stroke="#8b5cf6" name="Platelets (x1000)" />
-                    </LineChart>
-                  </ResponsiveContainer>
+                <div className="field-light">
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '16px' }}>
+                    {Object.keys(manualData).map((key) => (
+                      <label key={key} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                        <span>{key}</span>
+                        <input type="number" step="0.1" name={key} placeholder={`e.g. 10`} value={manualData[key]} onChange={handleManualChange} />
+                      </label>
+                    ))}
+                  </div>
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '24px' }}>
+                    <button onClick={analyzeManualReport} className="btn-primary" disabled={loading}>
+                      {loading ? "Analyzing..." : "Analyze Values"}
+                    </button>
+                  </div>
                 </div>
               )}
-            </>
-          )}
-        </section>
-      )}
-
-      <div className="layout">
-        <section className="panel">
-          <div className="card">
-            <div className="card-header">
-              <div>
-                <h3>Report Intake</h3>
-                <p>Upload a PDF/Image or enter values manually.</p>
-              </div>
-              <div className="tabs">
-                <button
-                  className={intakeTab === 'upload' ? 'active' : ''}
-                  onClick={() => setIntakeTab('upload')}
-                >
-                  Upload
-                </button>
-                <button
-                  className={intakeTab === 'manual' ? 'active' : ''}
-                  onClick={() => setIntakeTab('manual')}
-                >
-                  Manual Entry
-                </button>
-              </div>
             </div>
 
-            {intakeTab === 'upload' ? (
-              <div className="upload-container" style={{ padding: '2rem', border: '2px dashed var(--border)', borderRadius: '12px', textAlign: 'center', background: 'var(--bg-sub)' }}>
-                <div style={{ marginBottom: '1rem' }}>
-                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--primary)' }}>
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                    <polyline points="17 8 12 3 7 8" />
-                    <line x1="12" y1="3" x2="12" y2="15" />
-                  </svg>
+            {cbcResult && Object.keys(cbcResult).length > 0 && (
+              <div className="bento-card animate-up" style={{ background: C.lightBg1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
+                  <h3 style={{ fontSize: '20px', fontWeight: 800, margin: 0 }}>Extracted Findings</h3>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'rgba(59,130,246,0.1)', color: C.blue, padding: '6px 12px', borderRadius: '99px', fontSize: '12px', fontWeight: 700 }}>
+                     <span style={{ width: '6px', height: '6px', background: C.blueBright, borderRadius: '50%', boxShadow: `0 0 6px ${C.blueBright}` }} /> Analysis Complete
+                  </span>
                 </div>
-                <div className="upload-row" style={{ justifyContent: 'center' }}>
-                  <input
-                    type="file"
-                    accept="application/pdf, image/*"
-                    onChange={(event) => setPdfFile(event.target.files[0])}
-                    style={{ maxWidth: '300px' }}
-                  />
-                  <button onClick={uploadPdf} className="btn-primary">Analyze Report</button>
-                </div>
-                <p style={{ marginTop: '1rem', fontSize: '0.875rem', color: 'var(--muted)' }}>
-                  Supports PDF, JPG, PNG. Ensure text is clear.
-                </p>
-                {pdfError && <p className="error-text" style={{ textAlign: 'center', marginTop: '1rem' }}>{pdfError}</p>}
-              </div>
-            ) : (
-              <div className="manual-entry-form">
-                <div className="form-grid">
-                  {Object.keys(manualData).map((key) => (
-                    <label key={key} className="field">
-                      <span>{key}</span>
-                      <input
-                        type="number"
-                        step="0.1"
-                        name={key}
-                        placeholder={`Enter ${key}`}
-                        value={manualData[key]}
-                        onChange={handleManualChange}
-                      />
-                    </label>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '16px' }}>
+                  {Object.entries(cbcResult).map(([key, value]) => (
+                    <MetricGauge key={key} label={key} value={value.value} unit={value.unit} status={value.status} />
                   ))}
-                </div>
-                <div className="card-actions" style={{ justifyContent: 'flex-end', marginTop: '1rem' }}>
-                  <button onClick={analyzeManualReport} className="btn-primary" disabled={loading}>
-                    {loading ? "Analyzing..." : "Analyze Values"}
-                  </button>
                 </div>
               </div>
             )}
-          </div>
+          </section>
 
-          {cbcResult && Object.keys(cbcResult).length > 0 && (
-            <div style={{ marginTop: '2rem' }}>
-              <div style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <h3>Extracted Findings</h3>
-                <span className="chip chip-live">Analysis Complete</span>
+          <aside className="side">
+            <div className="bento-card" style={{ height: '100%' }}>
+              <div style={{ marginBottom: '20px', borderBottom: `1px solid ${C.lightBorder}`, paddingBottom: '16px' }}>
+                <h3 style={{ fontSize: '20px', fontWeight: 800, margin: 0 }}>Clinical Interpretation</h3>
               </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '1rem' }}>
-                {Object.entries(cbcResult).map(([key, value]) => (
-                  <MetricGauge
-                    key={key}
-                    label={key}
-                    value={value.value}
-                    unit={value.unit}
-                    status={value.status}
-                  />
+              
+              {cbcInterpretation ? (
+                <div>
+                  <p style={{ fontSize: '16px', lineHeight: 1.6, color: C.lightText, fontWeight: 500, margin: '0 0 24px' }}>
+                    {cbcInterpretation.summary}
+                  </p>
+
+                  {cbcInterpretation.possible_conditions?.length > 0 && (
+                    <div style={{ marginBottom: '24px' }}>
+                      <div style={{ fontSize: '13px', fontWeight: 700, color: C.lightMuted, textTransform: 'uppercase', marginBottom: '12px', letterSpacing: '0.05em' }}>Indications</div>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+                        {cbcInterpretation.possible_conditions.map((item) => (
+                          <span key={item} style={{ background: C.lightBg2, border: `1px solid ${C.lightBorder}`, padding: '8px 16px', borderRadius: '12px', fontSize: '14px', fontWeight: 600 }}>{item}</span>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {cbcInterpretation.ml_prediction && (
+                    <div style={{ background: C.lightBg2, padding: '20px', borderRadius: '16px', border: `1px solid ${C.lightBorder}`, marginBottom: '24px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '16px' }}>
+                         <div style={{ width: '40px', height: '40px', background: '#fff', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '20px', boxShadow: C.shadowCard }}>🤖</div>
+                         <div>
+                            <div style={{ fontSize: '13px', fontWeight: 700, color: C.lightMuted, textTransform: 'uppercase' }}>ML Pattern Detected</div>
+                            <strong style={{ fontSize: '16px', color: C.blueBright }}>{cbcInterpretation.ml_prediction}</strong>
+                         </div>
+                      </div>
+                      
+                      {cbcInterpretation.ml_model_insights && (
+                        <div style={{ display: 'grid', gap: '12px', background: '#fff', padding: '16px', borderRadius: '12px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
+                            <span style={{ color: C.lightMuted, fontWeight: 500 }}>Algorithm</span>
+                            <strong style={{ color: C.lightText }}>{cbcInterpretation.ml_model_insights.algorithm}</strong>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
+                            <span style={{ color: C.lightMuted, fontWeight: 500 }}>Confidence</span>
+                            <strong style={{ color: C.emerald }}>{cbcInterpretation.ml_model_insights.probability}%</strong>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {cbcInterpretation.note && (
+                    <div style={{ background: C.amberBg, color: '#d97706', padding: '16px', borderRadius: '12px', fontSize: '14px', fontWeight: 500, lineHeight: 1.5 }}>
+                      <strong>Note:</strong> {cbcInterpretation.note}
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 0', textAlign: 'center', color: C.lightMuted }}>
+                  <div style={{ fontSize: '48px', marginBottom: '16px', opacity: 0.5 }}>🔬</div>
+                  <p style={{ margin: 0, fontSize: '15px', maxWidth: '200px' }}>Upload a report or enter manual data to generate clinical insights.</p>
+                </div>
+              )}
+            </div>
+          </aside>
+        </div>
+
+        {/* Info Cards */}
+        <div className="animate-up" style={{ animationDelay: '0.3s' }}>
+            <div className="bento-card" style={{ marginBottom: '24px' }}>
+              <div style={{ marginBottom: '24px' }}>
+                <h3 style={{ fontSize: '20px', fontWeight: 800, margin: '0 0 8px' }}>Understanding Your Metrics</h3>
+                <p style={{ color: C.lightMuted, margin: 0 }}>Key indicators evaluated during a Complete Blood Count analysis.</p>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px' }}>
+                {[
+                  { t: 'Hemoglobin', d: 'The protein in red blood cells that carries oxygen. Low levels indicate anemia.' },
+                  { t: 'RBC Count', d: 'Total number of red blood cells. Irregular counts often track alongside hemoglobin abnormalities.' },
+                  { t: 'WBC Count', d: 'Total white blood cell count. High values often signify active infections or inflammation.' },
+                  { t: 'Platelets', d: 'Cell fragments that help your blood clot. Low points risk excessive bleeding.' },
+                  { t: 'MCV', d: 'The average size of your red blood cells. Differentiates between microcytic and macrocytic anemias.' },
+                  { t: 'ESR', d: 'Erythrocyte Sedimentation Rate. A generalized marker that indicates inflammation.' }
+                ].map((item, i) => (
+                   <div key={i} style={{ background: C.lightBg1, padding: '20px', borderRadius: '16px', border: `1px solid ${C.lightBorder}` }}>
+                      <h4 style={{ fontSize: '16px', fontWeight: 700, margin: '0 0 8px' }}>{item.t}</h4>
+                      <p style={{ fontSize: '14px', color: C.lightMuted, lineHeight: 1.5, margin: 0 }}>{item.d}</p>
+                   </div>
                 ))}
               </div>
             </div>
-          )}
-        </section>
 
-        <aside className="side">
-          <div className="card">
-            <div className="card-header">
-              <h3>Clinical Interpretation</h3>
-            </div>
-            {cbcInterpretation ? (
-              <div className="summary-block">
-                <p style={{ lineHeight: '1.6', fontSize: '1.25rem', fontWeight: 500 }}>{cbcInterpretation.summary}</p>
-
-                {cbcInterpretation.possible_conditions?.length > 0 && (
-                  <div style={{ marginTop: '20px' }}>
-                    <h4 style={{ fontSize: '1rem', color: 'var(--muted)', marginBottom: '12px' }}>Possible Indication</h4>
-                    <div className="pill-grid">
-                      {cbcInterpretation.possible_conditions.map((item) => (
-                        <div className="pill" key={item} style={{ fontSize: '1.1rem', padding: '8px 16px' }}>
-                          <span>{item}</span>
-                        </div>
-                      ))}
-                    </div>
+            <div className="bento-card">
+              <div style={{ marginBottom: '24px' }}>
+                <h3 style={{ fontSize: '20px', fontWeight: 800, margin: '0 0 8px' }}>Prevention & Wellness</h3>
+                <p style={{ color: C.lightMuted, margin: 0 }}>Lifestyle and dietary habits to maintain a healthy blood profile.</p>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px' }}>
+                {[
+                  { i: '🥦', t: 'Iron & Vitamin Intake', d: 'Ensure adequate consumption of iron-rich foods (spinach, beans) and Vitamin B12.' },
+                  { i: '💧', t: 'Hydration', d: 'Drinking enough water helps maintain proper blood volume and prevents inflated concentration.' },
+                  { i: '🛡️', t: 'Immune Support', d: 'Manage stress, get adequate sleep, and exercise moderately to maintain WBC ratios.' }
+                ].map((item, i) => (
+                  <div key={i} style={{ display: 'flex', gap: '16px', padding: '20px', background: C.lightBg2, borderRadius: '16px' }}>
+                     <div style={{ fontSize: '28px' }}>{item.i}</div>
+                     <div>
+                       <h4 style={{ fontSize: '16px', fontWeight: 700, margin: '0 0 4px' }}>{item.t}</h4>
+                       <p style={{ fontSize: '14px', color: C.lightMuted, lineHeight: 1.5, margin: 0 }}>{item.d}</p>
+                     </div>
                   </div>
-                )}
-
-                {cbcInterpretation.ml_prediction && (
-                  <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid var(--border)' }}>
-                    <h4 style={{ fontSize: '1rem', color: 'var(--muted)', marginBottom: '8px' }}>ML Pattern Detected</h4>
-                    <strong style={{ fontSize: '1.2rem', color: 'var(--primary)' }}>{cbcInterpretation.ml_prediction}</strong>
-
-                    {cbcInterpretation.ml_model_insights && (
-                      <div style={{ marginTop: '12px', padding: '12px', background: 'var(--bg-sub)', borderRadius: '6px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '0.9rem' }}>
-                          <span style={{ color: 'var(--muted)' }}>Algorithm:</span>
-                          <strong>{cbcInterpretation.ml_model_insights.algorithm}</strong>
-                        </div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.9rem' }}>
-                          <span style={{ color: 'var(--muted)' }}>Confidence:</span>
-                          <strong>{cbcInterpretation.ml_model_insights.probability}%</strong>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                )}
-                {cbcInterpretation.note && (
-                  <p className="note-text" style={{ marginTop: '20px', fontStyle: 'italic', color: 'var(--muted)', fontSize: '1rem' }}>{cbcInterpretation.note}</p>
-                )}
+                ))}
               </div>
-            ) : (
-              <p style={{ color: 'var(--muted)', fontStyle: 'italic' }}>
-                Upload a report to generate clinical insights.
-              </p>
-            )}
-          </div>
-        </aside>
+            </div>
+        </div>
       </div>
-
-      <div className="layout" style={{ marginTop: '3rem' }}>
-        <section className="panel" style={{ gridColumn: '1 / -1' }}>
-          <div className="card">
-            <div className="card-header">
-              <div>
-                <h3>Understanding Your Metrics</h3>
-                <p>Key indicators evaluated during a Complete Blood Count analysis.</p>
-              </div>
-            </div>
-            <div className="grid three">
-              <div>
-                <h4>Hemoglobin</h4>
-                <p className="note-text">The protein in red blood cells that carries oxygen. Low levels indicate anemia, while high levels can happen in cases of dehydration or polycythemia.</p>
-              </div>
-              <div>
-                <h4>RBC Count</h4>
-                <p className="note-text">Total number of red blood cells. Irregular counts often track alongside hemoglobin abnormalities, helping classify the root cause of anemic episodes.</p>
-              </div>
-              <div>
-                <h4>WBC Count</h4>
-                <p className="note-text">Total white blood cell count. High values often signify active infections, inflammation, or immune system disorders.</p>
-              </div>
-              <div>
-                <h4>Platelets</h4>
-                <p className="note-text">Cell fragments that help your blood clot. Low points risk excessive bleeding, while unusually high points raise risks for unwanted clots.</p>
-              </div>
-              <div>
-                <h4>MCV (Mean Corpuscular Vol)</h4>
-                <p className="note-text">The average size of your red blood cells. Extremely useful for differentiating between microcytic (e.g. Iron Deficient) and macrocytic (e.g. B12 Deficient) anemias.</p>
-              </div>
-              <div>
-                <h4>ESR</h4>
-                <p className="note-text">Erythrocyte Sedimentation Rate. A generalized marker that indicates if inflammation is occurring somewhere in the body.</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="card" style={{ marginTop: '20px' }}>
-            <div className="card-header">
-              <div>
-                <h3>Prevention & Wellness</h3>
-                <p>Lifestyle and dietary habits to maintain a healthy blood profile.</p>
-              </div>
-            </div>
-            <div className="grid three">
-              <div className="feature-card" style={{ padding: '20px', border: '1px solid var(--line)', boxShadow: 'none' }}>
-                <div className="icon-wrapper" style={{ width: '48px', height: '48px', fontSize: '20px', marginBottom: '12px' }}>🥦</div>
-                <h4 style={{ marginBottom: '8px' }}>Iron & Vitamin Intake</h4>
-                <p className="note-text">Ensure adequate consumption of iron-rich foods (spinach, beans) and Vitamin B12 to support proper red blood cell development.</p>
-              </div>
-              <div className="feature-card" style={{ padding: '20px', border: '1px solid var(--line)', boxShadow: 'none' }}>
-                <div className="icon-wrapper" style={{ width: '48px', height: '48px', fontSize: '20px', marginBottom: '12px' }}>💧</div>
-                <h4 style={{ marginBottom: '8px' }}>Hydration</h4>
-                <p className="note-text">Drinking enough water helps maintain proper blood volume and prevents artificially inflated metabolic concentration counts.</p>
-              </div>
-              <div className="feature-card" style={{ padding: '20px', border: '1px solid var(--line)', boxShadow: 'none' }}>
-                <div className="icon-wrapper" style={{ width: '48px', height: '48px', fontSize: '20px', marginBottom: '12px' }}>🛡️</div>
-                <h4 style={{ marginBottom: '8px' }}>Immune Support</h4>
-                <p className="note-text">Manage stress, get adequate sleep, and exercise moderately to maintain steady, healthy White Blood Cell turnover ratios.</p>
-              </div>
-            </div>
-          </div>
-        </section>
-      </div>
-
     </div>
   );
 }

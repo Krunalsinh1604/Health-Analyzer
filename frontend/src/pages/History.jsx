@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/Navbar';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+import { C } from '../theme';
 
 function History() {
     const { authFetch } = useAuth();
@@ -78,68 +79,50 @@ function History() {
     }, [generalReports]);
 
     return (
-        <div className="app">
+        <div className="page-container">
+            <div className="grid-bg-light" style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none' }} />
             <Navbar />
 
-            <main className="main-content" style={{ marginTop: '2rem' }}>
-                <div className="layout">
-                    <section className="panel" style={{ width: '100%' }}>
+            <div className="page-inner">
+                <div className="animate-up" style={{ marginBottom: '40px' }}>
+                    <span className="feature-pill">CHRONIC CONDITION TRACKING</span>
+                    <h2 className="page-title">Health History</h2>
+                    <p className="page-desc">Track your health trends over time.</p>
+                </div>
 
-                        <div className="card">
-                            <div className="card-header">
-                                <div>
-                                    <h3>Health History</h3>
-                                    <p>Track your health trends over time.</p>
-                                </div>
-                                <div className="tabs">
-                                    <button
-                                        className={activeTab === 'general' ? 'active' : ''}
-                                        onClick={() => setActiveTab('general')}
-                                    >
-                                        Diabetes
-                                    </button>
-                                    <button
-                                        className={activeTab === 'cbc' ? 'active' : ''}
-                                        onClick={() => setActiveTab('cbc')}
-                                    >
-                                        CBC Analysis
-                                    </button>
-                                    <button
-                                        className={activeTab === 'heart' ? 'active' : ''}
-                                        onClick={() => setActiveTab('heart')}
-                                    >
-                                        Heart
-                                    </button>
-                                    <button
-                                        className={activeTab === 'hypertension' ? 'active' : ''}
-                                        onClick={() => setActiveTab('hypertension')}
-                                    >
-                                        Hypertension
-                                    </button>
-                                </div>
-                            </div>
+                <div className="bento-card animate-up" style={{ animationDelay: '0.1s' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px', marginBottom: '32px', borderBottom: `1px solid ${C.lightBorder}`, paddingBottom: '20px' }}>
+                        <div className="tabs-light" style={{ overflowX: 'auto' }}>
+                            {['general', 'cbc', 'heart', 'hypertension'].map((tab) => (
+                                <button
+                                    key={tab}
+                                    className={activeTab === tab ? 'active' : ''}
+                                    onClick={() => setActiveTab(tab)}
+                                >
+                                    {tab === 'general' ? 'Diabetes' : tab === 'cbc' ? 'CBC Analysis' : tab === 'heart' ? 'Heart' : 'Hypertension'}
+                                </button>
+                            ))}
+                        </div>
+                        <div className="tabs-light">
+                            <button
+                                className={viewMode === 'table' ? 'active' : ''}
+                                onClick={() => setViewMode('table')}
+                            >
+                                Table View
+                            </button>
+                            <button
+                                className={viewMode === 'trends' ? 'active' : ''}
+                                onClick={() => setViewMode('trends')}
+                            >
+                                Trends View
+                            </button>
+                        </div>
+                    </div>
 
-                            <div className="card-body">
-                                <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem' }}>
-                                    <div className="tabs" style={{ fontSize: '0.9rem' }}>
-                                        <button
-                                            className={viewMode === 'table' ? 'active' : ''}
-                                            onClick={() => setViewMode('table')}
-                                        >
-                                            Table View
-                                        </button>
-                                        <button
-                                            className={viewMode === 'trends' ? 'active' : ''}
-                                            onClick={() => setViewMode('trends')}
-                                        >
-                                            Trends View
-                                        </button>
-                                    </div>
-                                </div>
-
-                                {loading ? (
-                                    <p>Loading history...</p>
-                                ) : (
+                    <div>
+                        {loading ? (
+                            <p style={{ color: C.lightMuted, textAlign: 'center', padding: '40px 0' }}>Loading history...</p>
+                        ) : (
                                     <>
                                         {/* GENERAL REPORTS VIEW */}
                                         {activeTab === 'general' && (
@@ -150,7 +133,7 @@ function History() {
                                                     <>
                                                         {viewMode === 'table' ? (
                                                             <div className="table-wrap">
-                                                                <table>
+                                                                <table className="table-light">
                                                                     <thead>
                                                                         <tr>
                                                                             <th>Date</th>
@@ -216,7 +199,7 @@ function History() {
 
                                                         {viewMode === 'table' && (
                                                             <div className="table-wrap">
-                                                                <table>
+                                                                <table className="table-light">
                                                                     <thead>
                                                                         <tr>
                                                                             <th>Date</th>
@@ -261,7 +244,7 @@ function History() {
                                                     <p>No heart health reports found.</p>
                                                 ) : (
                                                     <div className="table-wrap">
-                                                        <table>
+                                                        <table className="table-light">
                                                             <thead>
                                                                 <tr>
                                                                     <th>Date</th>
@@ -305,7 +288,7 @@ function History() {
                                                     <p>No hypertension reports found.</p>
                                                 ) : (
                                                     <div className="table-wrap">
-                                                        <table>
+                                                        <table className="table-light">
                                                             <thead>
                                                                 <tr>
                                                                     <th>Date</th>
@@ -343,86 +326,83 @@ function History() {
                                         )}
                                     </>
                                 )}
-                            </div>
-                        </div>
-                    </section>
+                    </div>
                 </div>
-            </main>
+            </div>
 
             {/* DETAILS MODAL */}
             {selectedReport && (
-                <div className="modal-overlay" onClick={closeModal}>
-                    <div className="modal-content" onClick={e => e.stopPropagation()}>
-                        <div className="modal-header">
-                            <h3>Report Details</h3>
-                            <button className="close-btn" onClick={closeModal}>&times;</button>
+                <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }} onClick={closeModal}>
+                    <div className="bento-card animate-up" onClick={e => e.stopPropagation()} style={{ maxWidth: '600px', width: '100%', maxHeight: '90vh', overflowY: 'auto' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', borderBottom: `1px solid ${C.lightBorder}`, paddingBottom: '16px' }}>
+                            <h3 style={{ fontSize: '20px', fontWeight: 800, margin: 0 }}>Report Details</h3>
+                            <button onClick={closeModal} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', color: C.lightMuted }}>&times;</button>
                         </div>
-                        <div className="modal-body">
+                        <div style={{ paddingBottom: '24px' }}>
                             {selectedReport.type === 'cbc' && (
                                 <div>
-                                    <h4>CBC Analysis</h4>
-                                    <p><strong>Date:</strong> {new Date(selectedReport.created_at).toLocaleString()}</p>
-                                    <p><strong>Source:</strong> {selectedReport.source}</p>
+                                    <h4 style={{ fontSize: '18px', fontWeight: 700, margin: '0 0 16px' }}>CBC Analysis</h4>
+                                    <p style={{ margin: '0 0 8px', color: C.lightText }}><strong>Date:</strong> {new Date(selectedReport.created_at).toLocaleString()}</p>
+                                    <p style={{ margin: '0 0 16px', color: C.lightText }}><strong>Source:</strong> {selectedReport.source}</p>
 
-                                    <div style={{ marginTop: '1rem' }}>
-                                        <h5>Key Findings</h5>
+                                    <div style={{ marginTop: '24px' }}>
+                                        <h5 style={{ fontSize: '15px', fontWeight: 700, margin: '0 0 12px' }}>Key Findings</h5>
                                         {selectedReport.interpretation?.abnormal_findings?.length > 0 ? (
-                                            <ul>
+                                            <ul style={{ margin: 0, paddingLeft: '20px', color: C.lightMuted, fontSize: '14px', lineHeight: 1.6 }}>
                                                 {selectedReport.interpretation.abnormal_findings.map((f, i) => (
                                                     <li key={i}>{f}</li>
                                                 ))}
                                             </ul>
-                                        ) : <p>No abnormal findings.</p>}
+                                        ) : <p style={{ color: C.lightMuted }}>No abnormal findings.</p>}
                                     </div>
 
-                                    <div style={{ marginTop: '1rem' }}>
-                                        <h5>Full Summary</h5>
-                                        <p>{selectedReport.interpretation?.summary}</p>
+                                    <div style={{ marginTop: '24px' }}>
+                                        <h5 style={{ fontSize: '15px', fontWeight: 700, margin: '0 0 12px' }}>Full Summary</h5>
+                                        <p style={{ margin: 0, color: C.lightMuted, fontSize: '14px', lineHeight: 1.6 }}>{selectedReport.interpretation?.summary}</p>
                                     </div>
                                 </div>
                             )}
 
                             {selectedReport.type === 'heart' && (
                                 <div>
-                                    <h4>Heart Disease Risk Assessment</h4>
-                                    <p><strong>Date:</strong> {new Date(selectedReport.created_at).toLocaleString()}</p>
-                                    <div className={`status-badge ${selectedReport.prediction?.includes('High') ? 'danger' : 'success'}`} style={{ fontSize: '1.2rem', margin: '1rem 0' }}>
+                                    <h4 style={{ fontSize: '18px', fontWeight: 700, margin: '0 0 16px' }}>Heart Disease Risk Assessment</h4>
+                                    <p style={{ margin: '0 0 16px', color: C.lightText }}><strong>Date:</strong> {new Date(selectedReport.created_at).toLocaleString()}</p>
+                                    <div style={{ padding: '12px 16px', borderRadius: '8px', fontWeight: 700, fontSize: '16px', marginBottom: '24px', background: selectedReport.prediction?.includes('High') ? C.crimsonBg : C.emeraldBg, color: selectedReport.prediction?.includes('High') ? C.crimson : C.emerald }}>
                                         {selectedReport.prediction}
                                     </div>
 
-                                    <div className="grid-2">
-                                        <div><strong>Age:</strong> {selectedReport.age}</div>
-                                        <div><strong>Sex:</strong> {selectedReport.sex === 1 ? 'Male' : 'Female'}</div>
-                                        <div><strong>BP:</strong> {selectedReport.trestbps} mmHg</div>
-                                        <div><strong>Cholesterol:</strong> {selectedReport.chol} mg/dl</div>
-                                        <div><strong>Max HR:</strong> {selectedReport.thalach} BPM</div>
-                                        <div><strong>Chest Pain:</strong> Type {selectedReport.cp}</div>
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '16px' }}>
+                                        <div style={{ background: C.lightBg2, padding: '12px', borderRadius: '8px' }}><div style={{ fontSize: '12px', color: C.lightMuted, marginBottom: '4px' }}>Age</div><div style={{ fontWeight: 600 }}>{selectedReport.age}</div></div>
+                                        <div style={{ background: C.lightBg2, padding: '12px', borderRadius: '8px' }}><div style={{ fontSize: '12px', color: C.lightMuted, marginBottom: '4px' }}>Sex</div><div style={{ fontWeight: 600 }}>{selectedReport.sex === 1 ? 'Male' : 'Female'}</div></div>
+                                        <div style={{ background: C.lightBg2, padding: '12px', borderRadius: '8px' }}><div style={{ fontSize: '12px', color: C.lightMuted, marginBottom: '4px' }}>BP</div><div style={{ fontWeight: 600 }}>{selectedReport.trestbps} mmHg</div></div>
+                                        <div style={{ background: C.lightBg2, padding: '12px', borderRadius: '8px' }}><div style={{ fontSize: '12px', color: C.lightMuted, marginBottom: '4px' }}>Cholesterol</div><div style={{ fontWeight: 600 }}>{selectedReport.chol} mg/dl</div></div>
+                                        <div style={{ background: C.lightBg2, padding: '12px', borderRadius: '8px' }}><div style={{ fontSize: '12px', color: C.lightMuted, marginBottom: '4px' }}>Max HR</div><div style={{ fontWeight: 600 }}>{selectedReport.thalach} BPM</div></div>
+                                        <div style={{ background: C.lightBg2, padding: '12px', borderRadius: '8px' }}><div style={{ fontSize: '12px', color: C.lightMuted, marginBottom: '4px' }}>Chest Pain</div><div style={{ fontWeight: 600 }}>Type {selectedReport.cp}</div></div>
                                     </div>
                                 </div>
                             )}
 
                             {selectedReport.type === 'hypertension' && (
                                 <div>
-                                    <h4>Hypertension Risk Profile</h4>
-                                    <p><strong>Date:</strong> {new Date(selectedReport.created_at).toLocaleString()}</p>
-                                    <div className={`status-badge ${selectedReport.prediction?.includes('High') ? 'danger' : 'success'}`} style={{ fontSize: '1.2rem', margin: '1rem 0' }}>
+                                    <h4 style={{ fontSize: '18px', fontWeight: 700, margin: '0 0 16px' }}>Hypertension Risk Profile</h4>
+                                    <p style={{ margin: '0 0 16px', color: C.lightText }}><strong>Date:</strong> {new Date(selectedReport.created_at).toLocaleString()}</p>
+                                    <div style={{ padding: '12px 16px', borderRadius: '8px', fontWeight: 700, fontSize: '16px', marginBottom: '24px', background: selectedReport.prediction?.includes('High') ? C.crimsonBg : C.emeraldBg, color: selectedReport.prediction?.includes('High') ? C.crimson : C.emerald }}>
                                         {selectedReport.prediction}
                                     </div>
 
-                                    <div className="grid-2">
-                                        <div><strong>Age:</strong> {selectedReport.age}</div>
-                                        <div><strong>Sex:</strong> {selectedReport.sex === 1 ? 'Male' : 'Female'}</div>
-                                        <div><strong>BMI:</strong> {selectedReport.bmi}</div>
-                                        <div><strong>Heart Rate:</strong> {selectedReport.heart_rate} BPM</div>
-                                        <div><strong>Smoker:</strong> {selectedReport.smoker ? 'Yes' : 'No'}</div>
-                                        <div><strong>Family History:</strong> {selectedReport.family_history ? 'Yes' : 'No'}</div>
-                                        <div><strong>Activity:</strong> {['Sedentary', 'Moderate', 'Active'][selectedReport.activity_level]}</div>
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '16px' }}>
+                                        <div style={{ background: C.lightBg2, padding: '12px', borderRadius: '8px' }}><div style={{ fontSize: '12px', color: C.lightMuted, marginBottom: '4px' }}>Age</div><div style={{ fontWeight: 600 }}>{selectedReport.age}</div></div>
+                                        <div style={{ background: C.lightBg2, padding: '12px', borderRadius: '8px' }}><div style={{ fontSize: '12px', color: C.lightMuted, marginBottom: '4px' }}>Sex</div><div style={{ fontWeight: 600 }}>{selectedReport.sex === 1 ? 'Male' : 'Female'}</div></div>
+                                        <div style={{ background: C.lightBg2, padding: '12px', borderRadius: '8px' }}><div style={{ fontSize: '12px', color: C.lightMuted, marginBottom: '4px' }}>BMI</div><div style={{ fontWeight: 600 }}>{selectedReport.bmi}</div></div>
+                                        <div style={{ background: C.lightBg2, padding: '12px', borderRadius: '8px' }}><div style={{ fontSize: '12px', color: C.lightMuted, marginBottom: '4px' }}>Heart Rate</div><div style={{ fontWeight: 600 }}>{selectedReport.heart_rate} BPM</div></div>
+                                        <div style={{ background: C.lightBg2, padding: '12px', borderRadius: '8px' }}><div style={{ fontSize: '12px', color: C.lightMuted, marginBottom: '4px' }}>Smoker</div><div style={{ fontWeight: 600 }}>{selectedReport.smoker ? 'Yes' : 'No'}</div></div>
+                                        <div style={{ background: C.lightBg2, padding: '12px', borderRadius: '8px' }}><div style={{ fontSize: '12px', color: C.lightMuted, marginBottom: '4px' }}>Family History</div><div style={{ fontWeight: 600 }}>{selectedReport.family_history ? 'Yes' : 'No'}</div></div>
                                     </div>
                                 </div>
                             )}
                         </div>
-                        <div className="modal-footer">
-                            <button className="btn-secondary" onClick={closeModal}>Close</button>
+                        <div style={{ display: 'flex', justifyContent: 'flex-end', paddingTop: '16px', borderTop: `1px solid ${C.lightBorder}` }}>
+                            <button className="btn-secondary-light" onClick={closeModal}>Close</button>
                         </div>
                     </div>
                 </div>

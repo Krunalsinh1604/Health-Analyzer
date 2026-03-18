@@ -1,10 +1,8 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import Footer from "../components/Footer";
-import authBg from "../assets/auth-bg.png";
-
 import { toast } from "react-toastify";
+import { C } from "../theme";
 
 const API_URL = import.meta.env.VITE_API_URL || `${window.location.protocol}//${window.location.hostname}:8000`;
 
@@ -64,74 +62,92 @@ function Register() {
 
   return (
     <>
-      <div className="auth-container" style={{ backgroundImage: `url(${authBg})` }}>
-        <div className="auth-card">
-          <div className="auth-logo">⚕️ Health Analyzer</div>
-          <h2>Create Account</h2>
-          <p>Join Health Analyzer today</p>
-
-          {error && <div className="error-message">{error}</div>}
-
-          <form onSubmit={handleSubmit}>
-            <div className="form-group">
-              <label>Full Name</label>
-              <input
-                type="text"
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                required
-              />
+      <div className="page-container" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+        <div className="grid-bg" style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none' }} />
+        
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem', position: 'relative', zIndex: 1 }}>
+          <div className="bento-card animate-up" style={{ maxWidth: '440px', width: '100%', padding: '40px' }}>
+            <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+              <div style={{ fontSize: '36px', marginBottom: '16px' }}>⚕️</div>
+              <h2 style={{ fontSize: '28px', fontWeight: 800, margin: '0 0 8px' }}>Create Account</h2>
+              <p style={{ color: C.lightMuted, margin: 0, fontSize: '15px' }}>Join Health Analyzer today</p>
             </div>
 
-            <div className="form-group">
-              <label>Email</label>
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
+            {error && <div style={{ background: C.crimsonBg, color: C.crimson, padding: '12px', borderRadius: '8px', fontSize: '14px', marginBottom: '20px', textAlign: 'center', fontWeight: 500 }}>{error}</div>}
 
-            <div className="form-group">
-              <label>Mobile Number</label>
-              <input
-                type="tel"
-                value={mobileNo}
-                onChange={(e) => setMobileNo(e.target.value)}
-                required
-              />
-            </div>
+            <form onSubmit={handleSubmit} className="field-light">
+              <div style={{ display: 'grid', gap: '20px' }}>
+                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <span style={{ fontSize: '14px', fontWeight: 600, color: C.lightText }}>Full Name</span>
+                  <input
+                    type="text"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    required
+                    style={{ padding: '12px', borderRadius: '8px', border: `1px solid ${C.lightBorder}`, width: '100%', outline: 'none' }}
+                  />
+                </label>
 
-            <div className="form-group">
-              <label>Password</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
+                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <span style={{ fontSize: '14px', fontWeight: 600, color: C.lightText }}>Email</span>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    style={{ padding: '12px', borderRadius: '8px', border: `1px solid ${C.lightBorder}`, width: '100%', outline: 'none' }}
+                  />
+                </label>
 
-            <div className="form-group">
-              <label>Confirm Password</label>
-              <input
-                type="password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-              />
-            </div>
+                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <span style={{ fontSize: '14px', fontWeight: 600, color: C.lightText }}>Mobile Number</span>
+                  <input
+                    type="tel"
+                    value={mobileNo}
+                    onChange={(e) => setMobileNo(e.target.value)}
+                    required
+                    style={{ padding: '12px', borderRadius: '8px', border: `1px solid ${C.lightBorder}`, width: '100%', outline: 'none' }}
+                  />
+                </label>
 
-            <button type="submit" className="auth-btn">Register</button>
-          </form>
+                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <span style={{ fontSize: '14px', fontWeight: 600, color: C.lightText }}>Password</span>
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    style={{ padding: '12px', borderRadius: '8px', border: `1px solid ${C.lightBorder}`, width: '100%', outline: 'none' }}
+                  />
+                </label>
 
-          <p className="auth-link">
-            Already have an account? <Link to="/login">Login here</Link>
-          </p>
+                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <span style={{ fontSize: '14px', fontWeight: 600, color: C.lightText }}>Confirm Password</span>
+                  <input
+                    type="password"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required
+                    style={{ padding: '12px', borderRadius: '8px', border: `1px solid ${C.lightBorder}`, width: '100%', outline: 'none' }}
+                  />
+                </label>
+              </div>
+
+              <div style={{ marginTop: '32px' }}>
+                <button type="submit" className="btn-primary" style={{ width: '100%', padding: '14px', fontSize: '16px' }}>
+                  Register
+                </button>
+              </div>
+
+              <div style={{ textAlign: "center", marginTop: "24px" }}>
+                <span style={{ fontSize: "14px", color: C.lightMuted, fontWeight: 500 }}>
+                  Already have an account? <Link to="/login" style={{ color: C.primary, textDecoration: 'none', marginLeft: '4px' }}>Login here <span aria-hidden="true">&rarr;</span></Link>
+                </span>
+              </div>
+            </form>
+          </div>
         </div>
       </div>
-      <Footer />
     </>
   );
 }

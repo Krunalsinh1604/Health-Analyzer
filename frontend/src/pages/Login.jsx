@@ -1,10 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import Footer from "../components/Footer";
-import authBg from "../assets/auth-bg.png";
-
 import { toast } from "react-toastify";
+import { C } from "../theme";
 
 function Login() {
   const [loginId, setLoginId] = useState("");
@@ -119,88 +117,101 @@ function Login() {
 
   return (
     <>
-      <div className="auth-container" style={{ backgroundImage: `url(${authBg})` }}>
-        <div className="auth-card">
-          <div className="auth-logo">⚕️ Health Analyzer</div>
-          <h2>Secure Login</h2>
-          <p>Login with email/mobile and password</p>
-
-          {error && <div className="error-message">{error}</div>}
-
-          <form onSubmit={handlePasswordLogin}>
-            <div className="form-group">
-              <label>Email or Mobile Number</label>
-              <input
-                type="text"
-                value={loginId}
-                onChange={(e) => setLoginId(e.target.value)}
-                required
-              />
+      <div className="page-container" style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', position: 'relative' }}>
+        <div className="grid-bg" style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none' }} />
+        
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '2rem', position: 'relative', zIndex: 1 }}>
+          <div className="bento-card animate-up" style={{ maxWidth: '440px', width: '100%', padding: '40px' }}>
+            <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+              <div style={{ fontSize: '36px', marginBottom: '16px' }}>⚕️</div>
+              <h2 style={{ fontSize: '28px', fontWeight: 800, margin: '0 0 8px' }}>Secure Login</h2>
+              <p style={{ color: C.lightMuted, margin: 0, fontSize: '15px' }}>Welcome back to Health Analyzer</p>
             </div>
 
-            <div className="form-group">
-              <label>Password</label>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
+            {error && <div style={{ background: C.crimsonBg, color: C.crimson, padding: '12px', borderRadius: '8px', fontSize: '14px', marginBottom: '20px', textAlign: 'center', fontWeight: 500 }}>{error}</div>}
 
-            <button type="submit" className="auth-btn" disabled={loggingIn}>
-              {loggingIn ? "Logging in..." : "Login"}
-            </button>
+            <form onSubmit={handlePasswordLogin} className="field-light">
+              <div style={{ display: 'grid', gap: '20px' }}>
+                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <span style={{ fontSize: '14px', fontWeight: 600, color: C.lightText }}>Email or Mobile Number</span>
+                  <input
+                    type="text"
+                    value={loginId}
+                    onChange={(e) => setLoginId(e.target.value)}
+                    required
+                    style={{ padding: '12px', borderRadius: '8px', border: `1px solid ${C.lightBorder}`, width: '100%', outline: 'none' }}
+                  />
+                </label>
 
-            <div style={{ display: "flex", justifyContent: "space-between", marginTop: "1rem" }}>
-              <button
-                type="button"
-                className="auth-link-btn"
-                onClick={() => setShowForgotModal(true)}
-                style={{ background: "none", border: "none", color: "var(--primary)", cursor: "pointer", fontSize: "0.9rem" }}
-              >
-                Forgot Password?
-              </button>
-              <Link to="/register" style={{ fontSize: "0.9rem" }}>Register here</Link>
-            </div>
-          </form>
+                <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                  <span style={{ fontSize: '14px', fontWeight: 600, color: C.lightText }}>Password</span>
+                  <input
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    style={{ padding: '12px', borderRadius: '8px', border: `1px solid ${C.lightBorder}`, width: '100%', outline: 'none' }}
+                  />
+                </label>
+              </div>
+
+              <div style={{ marginTop: '32px' }}>
+                <button type="submit" className="btn-primary" disabled={loggingIn} style={{ width: '100%', padding: '14px', fontSize: '16px' }}>
+                  {loggingIn ? "Logging in..." : "Login"}
+                </button>
+              </div>
+
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: 'center', marginTop: "24px" }}>
+                <button
+                  type="button"
+                  onClick={() => setShowForgotModal(true)}
+                  style={{ background: "none", border: "none", color: C.primary, cursor: "pointer", fontSize: "14px", fontWeight: 600 }}
+                >
+                  Forgot Password?
+                </button>
+                <Link to="/register" style={{ fontSize: "14px", color: C.lightMuted, fontWeight: 500, textDecoration: 'none' }}>
+                  Register here <span aria-hidden="true">&rarr;</span>
+                </Link>
+              </div>
+            </form>
+          </div>
         </div>
       </div>
 
       {showForgotModal && (
-        <div className="modal-overlay" onClick={closeForgotModal}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '400px' }}>
-            <div className="modal-header">
-              <h2>{forgotStep === 1 ? "Forgot Password" : "Reset Password"}</h2>
-              <button className="close-btn" onClick={closeForgotModal}>
-                &times;
-              </button>
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px' }} onClick={closeForgotModal}>
+          <div className="bento-card animate-up" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '440px', width: '100%', padding: '32px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+              <h2 style={{ fontSize: '20px', fontWeight: 800, margin: 0 }}>{forgotStep === 1 ? "Forgot Password" : "Reset Password"}</h2>
+              <button onClick={closeForgotModal} style={{ background: 'none', border: 'none', fontSize: '24px', cursor: 'pointer', color: C.lightMuted }}>&times;</button>
             </div>
-            <div className="modal-body">
-              <form onSubmit={handleForgotPassword}>
-                {forgotStep === 1 ? (
-                  <>
-                    <p style={{ marginBottom: "1rem", color: "var(--text-light)" }}>
-                      Enter your registered mobile number to receive an OTP.
-                    </p>
-                    <div className="form-group">
-                      <label>Mobile Number</label>
-                      <input
-                        type="text"
-                        value={forgotMobile}
-                        onChange={(e) => setForgotMobile(e.target.value)}
-                        required
-                        placeholder="e.g. 1234567890"
-                      />
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <p style={{ marginBottom: "1rem", color: "var(--text-light)" }}>
-                      Enter the OTP sent to your mobile number and your new password.
-                    </p>
-                    <div className="form-group">
-                      <label>OTP</label>
+            
+            <form onSubmit={handleForgotPassword} className="field-light">
+              {forgotStep === 1 ? (
+                <>
+                  <p style={{ marginBottom: "24px", color: C.lightMuted, fontSize: '14px', lineHeight: 1.5 }}>
+                    Enter your registered mobile number to receive an OTP.
+                  </p>
+                  <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <span style={{ fontSize: '14px', fontWeight: 600, color: C.lightText }}>Mobile Number</span>
+                    <input
+                      type="text"
+                      value={forgotMobile}
+                      onChange={(e) => setForgotMobile(e.target.value)}
+                      required
+                      placeholder="e.g. 1234567890"
+                      style={{ padding: '12px', borderRadius: '8px', border: `1px solid ${C.lightBorder}`, width: '100%', outline: 'none' }}
+                    />
+                  </label>
+                </>
+              ) : (
+                <>
+                  <p style={{ marginBottom: "24px", color: C.lightMuted, fontSize: '14px', lineHeight: 1.5 }}>
+                    Enter the OTP sent to your mobile number and your new password.
+                  </p>
+                  <div style={{ display: 'grid', gap: '20px' }}>
+                    <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <span style={{ fontSize: '14px', fontWeight: 600, color: C.lightText }}>OTP</span>
                       <input
                         type="text"
                         value={forgotOtp}
@@ -208,41 +219,35 @@ function Login() {
                         required
                         placeholder="6-digit OTP"
                         maxLength="6"
+                        style={{ padding: '12px', borderRadius: '8px', border: `1px solid ${C.lightBorder}`, width: '100%', outline: 'none', letterSpacing: '4px', textAlign: 'center', fontSize: '18px', fontWeight: 700 }}
                       />
-                    </div>
-                    <div className="form-group">
-                      <label>New Password</label>
+                    </label>
+                    <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                      <span style={{ fontSize: '14px', fontWeight: 600, color: C.lightText }}>New Password</span>
                       <input
                         type="password"
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
                         required
+                        style={{ padding: '12px', borderRadius: '8px', border: `1px solid ${C.lightBorder}`, width: '100%', outline: 'none' }}
                       />
-                    </div>
-                  </>
-                )}
+                    </label>
+                  </div>
+                </>
+              )}
 
-                <div style={{ display: "flex", justifyContent: "flex-end", gap: "1rem", marginTop: "1.5rem" }}>
-                  <button type="button" className="btn btn-secondary" onClick={closeForgotModal}>
-                    Cancel
-                  </button>
-                  <button type="submit" className="btn btn-primary" disabled={forgotLoading}>
-                    {forgotLoading ? (
-                      <span className="spinner"></span>
-                    ) : forgotStep === 1 ? (
-                      "Send OTP"
-                    ) : (
-                      "Reset Password"
-                    )}
-                  </button>
-                </div>
-              </form>
-            </div>
+              <div style={{ display: "flex", justifyContent: "flex-end", gap: "12px", marginTop: "32px" }}>
+                <button type="button" className="btn-secondary-light" onClick={closeForgotModal}>
+                  Cancel
+                </button>
+                <button type="submit" className="btn-primary" disabled={forgotLoading}>
+                  {forgotLoading ? "Processing..." : forgotStep === 1 ? "Send OTP" : "Reset Password"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
-
-      <Footer />
     </>
   );
 }

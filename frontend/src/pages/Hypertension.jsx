@@ -3,6 +3,7 @@ import { NavLink } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import Navbar from "../components/Navbar";
 import { toast } from "react-toastify";
+import { C } from "../theme";
 
 function HypertensionPage() {
   const { user, logout, authFetch } = useAuth();
@@ -66,159 +67,182 @@ function HypertensionPage() {
   };
 
   return (
-    <div className="app">
+    <div className="page-container">
+      <div className="grid-bg-light" style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none' }} />
       <Navbar />
 
-      <div className="clinical-container">
-        <header className="clinical-header">
-          <h2>Hypertension Monitoring</h2>
-          <p>Longitudinal tracking and risk analysis of blood pressure indicators.</p>
-        </header>
-
-        <div className="clinical-card">
-          {prediction ? (
-            <div className="clinical-result">
-              <h3 style={{ marginBottom: '1.5rem', color: 'var(--muted)' }}>Risk Analysis Complete</h3>
-              <div style={{ fontSize: '2.5rem', marginBottom: '1rem' }}>
-                <span className={prediction.raw === 1 ? 'badge-risk-high' : 'badge-risk-low'}>
-                  {prediction.prediction}
-                </span>
-              </div>
-
-              <div style={{ padding: '1.5rem', background: 'var(--bg-card)', borderRadius: '8px', border: '1px solid var(--line)', marginBottom: '2rem', textAlign: 'left', maxWidth: '400px', margin: '0 auto 2rem' }}>
-                <h4 style={{ marginBottom: '1rem', borderBottom: '1px solid var(--line)', paddingBottom: '0.5rem' }}>ML Model Insights</h4>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
-                  <span style={{ color: 'var(--muted)' }}>Algorithm:</span>
-                  <strong>{prediction.ml_model_insights?.algorithm || "Machine Learning Model"}</strong>
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <span style={{ color: 'var(--muted)' }}>Confidence:</span>
-                  <strong>{prediction.ml_model_insights ? `${prediction.ml_model_insights.probability}%` : "High"}</strong>
-                </div>
-              </div>
-
-              <p style={{ color: 'var(--muted)', maxWidth: '500px', margin: '0 auto 2rem' }}>
-                Based on your vitals and lifestyle factors, our trained AI model has profiled your hypertension risk.
-              </p>
-              <button className="clinical-btn" onClick={() => setPrediction(null)} style={{ background: 'var(--muted)' }}>
-                Check Another Profile
-              </button>
-            </div>
-          ) : (
-            <form onSubmit={handleSubmit}>
-              <div className="clinical-grid">
-                <div className="clinical-field">
-                  <label className="clinical-label">Age</label>
-                  <input className="clinical-input" type="number" name="age" value={formData.age} onChange={handleChange} placeholder="e.g. 45" required />
-                </div>
-
-                <div className="clinical-field">
-                  <label className="clinical-label">Sex</label>
-                  <select className="clinical-select" name="sex" value={formData.sex} onChange={handleChange}>
-                    <option value="1">Male</option>
-                    <option value="0">Female</option>
-                  </select>
-                </div>
-
-                <div className="clinical-field">
-                  <label className="clinical-label">BMI</label>
-                  <input className="clinical-input" type="number" step="0.1" name="bmi" value={formData.bmi} onChange={handleChange} placeholder="e.g. 24.5" required />
-                </div>
-
-                <div className="clinical-field">
-                  <label className="clinical-label">Heart Rate (BPM)</label>
-                  <input className="clinical-input" type="number" name="heart_rate" value={formData.heart_rate} onChange={handleChange} placeholder="e.g. 72" required />
-                </div>
-
-                <div className="clinical-field">
-                  <label className="clinical-label">Activity Level</label>
-                  <select className="clinical-select" name="activity_level" value={formData.activity_level} onChange={handleChange}>
-                    <option value="0">Sedentary</option>
-                    <option value="1">Moderate</option>
-                    <option value="2">Active</option>
-                  </select>
-                </div>
-
-                <div className="clinical-field">
-                  <label className="clinical-label">Smoker Status</label>
-                  <select className="clinical-select" name="smoker" value={formData.smoker} onChange={handleChange}>
-                    <option value="0">Non-Smoker</option>
-                    <option value="1">Smoker</option>
-                  </select>
-                </div>
-
-                <div className="clinical-field">
-                  <label className="clinical-label">Family History</label>
-                  <select className="clinical-select" name="family_history" value={formData.family_history} onChange={handleChange}>
-                    <option value="0">No Family History</option>
-                    <option value="1">Has Family History</option>
-                  </select>
-                </div>
-              </div>
-
-              <div style={{ marginTop: '2.5rem', textAlign: 'center' }}>
-                <button type="submit" className="clinical-btn" disabled={loading}>
-                  {loading ? 'Processing...' : 'Assess Risk'}
-                </button>
-              </div>
-            </form>
-          )}
+      <div className="page-inner">
+        <div className="animate-up" style={{ marginBottom: '40px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '20px' }}>
+          <div>
+            <span className="feature-pill">CHRONIC CONDITION TRACKING</span>
+            <h2 className="page-title">Hypertension Monitoring</h2>
+            <p className="page-desc">Longitudinal tracking and ML-driven risk analysis of blood pressure indicators.</p>
+          </div>
         </div>
+
+        <div className="layout animate-up" style={{ animationDelay: '0.1s', display: 'grid', gridTemplateColumns: 'minmax(0, 1.8fr) minmax(0, 1fr)', gap: '24px', marginBottom: '32px' }}>
+          <section className="panel" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            <div className="bento-card">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px', marginBottom: '24px' }}>
+                <div>
+                  <h3 style={{ fontSize: '20px', fontWeight: 800, margin: '0 0 8px' }}>Patient Vitals</h3>
+                  <p style={{ color: C.lightMuted, margin: 0 }}>Enter clinical parameters for hypertension risk prediction.</p>
+                </div>
+                <button className="btn-secondary-light" onClick={() => setFormData({ age: '', sex: '1', bmi: '', heart_rate: '', activity_level: '1', smoker: '0', family_history: '0' })}>Clear Details</button>
+              </div>
+
+              <form onSubmit={handleSubmit} className="field-light">
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '20px' }}>
+                  <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <span>Age</span>
+                    <input type="number" name="age" value={formData.age} onChange={handleChange} placeholder="e.g. 45" required />
+                  </label>
+                  <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <span>Sex</span>
+                    <select name="sex" value={formData.sex} onChange={handleChange}>
+                      <option value="1">Male</option>
+                      <option value="0">Female</option>
+                    </select>
+                  </label>
+                  <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <span>BMI</span>
+                    <input type="number" step="0.1" name="bmi" value={formData.bmi} onChange={handleChange} placeholder="e.g. 24.5" required />
+                  </label>
+                  <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <span>Heart Rate (BPM)</span>
+                    <input type="number" name="heart_rate" value={formData.heart_rate} onChange={handleChange} placeholder="e.g. 72" required />
+                  </label>
+                  <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <span>Activity Level</span>
+                    <select name="activity_level" value={formData.activity_level} onChange={handleChange}>
+                      <option value="0">Sedentary</option>
+                      <option value="1">Moderate</option>
+                      <option value="2">Active</option>
+                    </select>
+                  </label>
+                  <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <span>Smoker Status</span>
+                    <select name="smoker" value={formData.smoker} onChange={handleChange}>
+                      <option value="0">Non-Smoker</option>
+                      <option value="1">Smoker</option>
+                    </select>
+                  </label>
+                  <label style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                    <span>Family History</span>
+                    <select name="family_history" value={formData.family_history} onChange={handleChange}>
+                      <option value="0">No Family History</option>
+                      <option value="1">Has Family History</option>
+                    </select>
+                  </label>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '32px' }}>
+                  <button type="submit" className="clinical-btn" disabled={loading}>
+                    {loading ? "Analyzing..." : "Run Analysis"}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </section>
+
+          <aside className="side">
+            <div className="bento-card" style={{ height: '100%' }}>
+              <div style={{ marginBottom: '20px', borderBottom: `1px solid ${C.lightBorder}`, paddingBottom: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div>
+                  <h3 style={{ fontSize: '20px', fontWeight: 800, margin: '0 0 4px' }}>Analysis Results</h3>
+                  <p style={{ color: C.lightMuted, fontSize: '14px', margin: 0 }}>Model confidence & findings</p>
+                </div>
+                <span style={{ background: C.lightBg3, color: C.lightMuted, padding: '4px 8px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase' }}>Auto</span>
+              </div>
+
+              {prediction ? (
+                <div>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px', marginBottom: '24px' }}>
+                    <div style={{ background: prediction.raw === 1 ? C.crimsonBg : C.emeraldBg, border: `1px solid ${prediction.raw === 1 ? 'rgba(239,68,68,0.2)' : 'rgba(16,185,129,0.2)'}`, padding: '16px', borderRadius: '12px' }}>
+                      <div style={{ fontSize: '12px', fontWeight: 700, color: prediction.raw === 1 ? '#ef4444' : '#10b981', textTransform: 'uppercase', marginBottom: '8px' }}>Risk Stratification</div>
+                      <div style={{ fontSize: '24px', fontWeight: 800, color: prediction.raw === 1 ? C.crimson : C.emerald }}>{prediction.prediction}</div>
+                    </div>
+                  </div>
+
+                  <div style={{ background: '#fff', border: `1px solid ${C.lightBorder}`, padding: '20px', borderRadius: '16px', boxShadow: C.shadowCard }}>
+                    <h4 style={{ fontSize: '15px', fontWeight: 700, margin: '0 0 12px' }}>ML Model Insights</h4>
+                    <div style={{ display: 'grid', gap: '12px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
+                        <span style={{ color: C.lightMuted, fontWeight: 500 }}>Algorithm</span>
+                        <strong style={{ color: C.lightText }}>{prediction.ml_model_insights?.algorithm || "Machine Learning Model"}</strong>
+                      </div>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
+                        <span style={{ color: C.lightMuted, fontWeight: 500 }}>Confidence</span>
+                        <strong style={{ color: C.emerald }}>{prediction.ml_model_insights ? `${prediction.ml_model_insights.probability}%` : "High"}</strong>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <p style={{ color: C.lightMuted, fontSize: '14px', lineHeight: '1.5', marginTop: '24px' }}>
+                    Based on your vitals and lifestyle factors, our trained AI model has profiled your hypertension risk.
+                  </p>
+                  
+                  <div style={{ display: 'flex', justifyContent: 'center', marginTop: '24px' }}>
+                    <button className="btn-secondary-light" onClick={() => setPrediction(null)} style={{ width: '100%' }}>
+                      Check Another Profile
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '60px 0', textAlign: 'center', color: C.lightMuted }}>
+                  <div style={{ fontSize: '48px', marginBottom: '16px', opacity: 0.5 }}>🩺</div>
+                  <p style={{ margin: 0, fontSize: '15px', maxWidth: '200px' }}>Run analysis to see detailed prediction results.</p>
+                </div>
+              )}
+            </div>
+          </aside>
+        </div>
+
+        {/* Info Cards */}
+        <div className="animate-up" style={{ animationDelay: '0.2s' }}>
+            <div className="bento-card" style={{ marginBottom: '24px' }}>
+              <div style={{ marginBottom: '24px' }}>
+                <h3 style={{ fontSize: '20px', fontWeight: 800, margin: '0 0 8px' }}>Understanding Your Metrics</h3>
+                <p style={{ color: C.lightMuted, margin: 0 }}>Key indicators evaluated for your hypertension risk profile.</p>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px' }}>
+                {[
+                  { t: 'Age & Genetics', d: 'Blood vessels naturally lose elasticity over time. A family history of hypertension roughly doubles your personal baseline risk of developing chronic high blood pressure.' },
+                  { t: 'BMI', d: 'Body Mass Index significantly correlates with blood volume and vascular resistance. Overweight individuals require more pressure to move blood through excess tissue.' },
+                  { t: 'Resting Heart Rate', d: 'A higher resting heart rate means your heart works harder per minute. Over time, this constant intense mechanical stress weakens the heart walls.' }
+                ].map((item, i) => (
+                   <div key={i} style={{ background: C.lightBg1, padding: '20px', borderRadius: '16px', border: `1px solid ${C.lightBorder}` }}>
+                      <h4 style={{ fontSize: '16px', fontWeight: 700, margin: '0 0 8px' }}>{item.t}</h4>
+                      <p style={{ fontSize: '14px', color: C.lightMuted, lineHeight: 1.5, margin: 0 }}>{item.d}</p>
+                   </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="bento-card">
+              <div style={{ marginBottom: '24px' }}>
+                <h3 style={{ fontSize: '20px', fontWeight: 800, margin: '0 0 8px' }}>Prevention & Wellness</h3>
+                <p style={{ color: C.lightMuted, margin: 0 }}>Actionable lifestyle changes to manage or prevent hypertension.</p>
+              </div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '24px' }}>
+                {[
+                  { i: '🧂', t: 'DASH Diet & Sodium', d: 'Limit daily sodium intake to under 2,300mg (ideally 1,500mg) and focus on the DASH diet emphasizing potassium-rich vegetables and whole grains.' },
+                  { i: '🚭', t: 'Eliminate Smoking', d: 'Nicotine causes your blood vessels to constrict and your heart to beat faster, temporarily raising blood pressure after every single cigarette.' },
+                  { i: '🧘', t: 'Stress Management', d: 'Chronic stress keeps your body in an adrenaline-fueled fight-or-flight state. Practice mindfulness, deep breathing, or yoga to lower your resting vascular tension.' }
+                ].map((item, i) => (
+                  <div key={i} style={{ display: 'flex', gap: '16px', padding: '20px', background: C.lightBg2, borderRadius: '16px' }}>
+                     <div style={{ fontSize: '28px' }}>{item.i}</div>
+                     <div>
+                       <h4 style={{ fontSize: '16px', fontWeight: 700, margin: '0 0 4px' }}>{item.t}</h4>
+                       <p style={{ fontSize: '14px', color: C.lightMuted, lineHeight: 1.5, margin: 0 }}>{item.d}</p>
+                     </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+        </div>
+
       </div>
-
-      <div className="layout" style={{ marginTop: '3rem', margin: '0 2rem 2rem' }}>
-        <section className="panel" style={{ gridColumn: '1 / -1' }}>
-          <div className="card">
-            <div className="card-header">
-              <div>
-                <h3>Understanding Your Metrics</h3>
-                <p>Key indicators evaluated for your hypertension risk profile.</p>
-              </div>
-            </div>
-            <div className="grid three">
-              <div>
-                <h4>Age & Genetics</h4>
-                <p className="note-text">Blood vessels naturally lose elasticity over time. A family history of hypertension roughly doubles your personal baseline risk of developing chronic high blood pressure.</p>
-              </div>
-              <div>
-                <h4>BMI</h4>
-                <p className="note-text">Body Mass Index significantly correlates with blood volume and vascular resistance. Overweight individuals require more pressure to move blood through excess tissue.</p>
-              </div>
-              <div>
-                <h4>Resting Heart Rate</h4>
-                <p className="note-text">A higher resting heart rate means your heart works harder per minute. Over time, this constant intense mechanical stress weakens the heart walls.</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="card" style={{ marginTop: '20px' }}>
-            <div className="card-header">
-              <div>
-                <h3>Prevention & Wellness</h3>
-                <p>Actionable lifestyle changes to manage or prevent hypertension.</p>
-              </div>
-            </div>
-            <div className="grid three">
-              <div className="feature-card" style={{ padding: '20px', border: '1px solid var(--line)', boxShadow: 'none' }}>
-                <div className="icon-wrapper" style={{ width: '48px', height: '48px', fontSize: '20px', marginBottom: '12px' }}>🧂</div>
-                <h4 style={{ marginBottom: '8px' }}>DASH Diet & Sodium</h4>
-                <p className="note-text">Limit daily sodium intake to under 2,300mg (ideally 1,500mg) and focus on the DASH diet emphasizing potassium-rich vegetables and whole grains.</p>
-              </div>
-              <div className="feature-card" style={{ padding: '20px', border: '1px solid var(--line)', boxShadow: 'none' }}>
-                <div className="icon-wrapper" style={{ width: '48px', height: '48px', fontSize: '20px', marginBottom: '12px' }}>🚭</div>
-                <h4 style={{ marginBottom: '8px' }}>Eliminate Smoking</h4>
-                <p className="note-text">Nicotine causes your blood vessels to constrict and your heart to beat faster, temporarily raising blood pressure after every single cigarette.</p>
-              </div>
-              <div className="feature-card" style={{ padding: '20px', border: '1px solid var(--line)', boxShadow: 'none' }}>
-                <div className="icon-wrapper" style={{ width: '48px', height: '48px', fontSize: '20px', marginBottom: '12px' }}>🧘</div>
-                <h4 style={{ marginBottom: '8px' }}>Stress Management</h4>
-                <p className="note-text">Chronic stress keeps your body in an adrenaline-fueled fight-or-flight state. Practice mindfulness, deep breathing, or yoga to lower your resting vascular tension.</p>
-              </div>
-            </div>
-          </div>
-        </section>
-      </div>
-
     </div>
   );
 }
