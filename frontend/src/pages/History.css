@@ -1,0 +1,95 @@
+.history-page {
+  animation: fadeIn 0.5s ease-out;
+  height: 100%;
+}
+
+.history-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 24px;
+}
+
+.history-card {
+  display: flex !important;
+  align-items: flex-start;
+  gap: 20px;
+  padding: 24px !important;
+}
+
+.history-icon-wrapper {
+  width: 50px;
+  height: 50px;
+  background: rgba(46, 196, 182, 0.1);
+  color: var(--primary-color);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.history-content {
+  flex: 1;
+}
+
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.history-type {
+  font-weight: 600;
+  color: var(--text-dark);
+}
+
+.history-date {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.history-prediction h4 {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.finding {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.finding.risk {
+  color: #EF4444;
+}
+
+.finding.safe {
+  color: #10B981;
+}
+
+.history-confidence {
+  margin-top: 16px;
+  font-size: 0.85rem;
+  color: var(--primary-color);
+  background: rgba(46, 196, 182, 0.1);
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 12px;
+}
+
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+}
+
+.full-height {
+  height: 100%;
+  min-height: 400px;
+}
+
+.py-20 { padding-top: 80px; padding-bottom: 80px; }
+.text-center { text-align: center; }

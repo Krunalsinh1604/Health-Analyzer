@@ -30,6 +30,39 @@ from src.recommendation import recommend_specialist
 from src.pdf_service import extract_parameters_from_pdf, extract_cbc_from_file
 from src.cbc_analysis import interpret_cbc
 
+from src.database import SessionLocal
+from src.models import User as DBUser
+from contextlib import asynccontextmanager
+
+def create_default_admin():
+    db = SessionLocal()
+    try:
+        admin = db.query(DBUser).filter(DBUser.email == "admin@gmail.com").first()
+        if not admin:
+            hashed_password = get_password_hash("Admin@123")
+            new_admin = DBUser(
+                email="admin@gmail.com",
+                mobile_no="0000000000",
+                password_hash=hashed_password,
+                full_name="System Admin",
+                role="admin"
+            )
+            db.add(new_admin)
+            db.commit()
+            print("✅ Default admin user created successfully.")
+        else:
+            print("ℹ️ Default admin user already exists. Skipping creation.")
+    except Exception as e:
+        db.rollback()
+        print(f"❌ Error creating default admin user: {e}")
+    finally:
+        db.close()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    create_default_admin()
+    yield
+
 # ---------------- INITIALIZE DATABASE ----------------
 
 init_db()
@@ -39,7 +72,8 @@ init_db()
 app = FastAPI(
     title="Health Analyzer API",
     description="AI-powered Healthcare Analytics & Decision Support System",
-    version="2.0"
+    version="2.0",
+    lifespan=lifespan
 )
 
 # ---------------- CORS ----------------

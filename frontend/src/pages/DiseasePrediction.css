@@ -1,0 +1,96 @@
+/* DiseasePrediction.css */
+.prediction-page {
+  animation: fadeIn 0.5s ease-out;
+  height: 100%;
+}
+
+.prediction-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr;
+  gap: 24px;
+}
+
+.form-card {
+  padding: 32px !important;
+}
+
+.result-card {
+  padding: 32px !important;
+  display: flex;
+  flex-direction: column;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.result-placeholder {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: var(--text-muted);
+  gap: 16px;
+  padding: 40px 0;
+}
+
+.result-content {
+  animation: fadeIn 0.5s ease-out;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.result-icon {
+  margin-bottom: 16px;
+  margin-top: 24px;
+  display: flex;
+  justify-content: center;
+}
+
+.result-value {
+  font-size: 2.5rem;
+  font-weight: 700;
+  text-align: center;
+  margin: 16px 0;
+  background: linear-gradient(135deg, var(--text-dark), var(--primary-color));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.result-message {
+  text-align: center;
+  font-size: 1.1rem;
+  margin-bottom: 24px;
+  color: var(--text-dark);
+}
+
+.mb-4 { margin-bottom: 16px; }
+.text-lg { font-size: 1.125rem; }
+.font-semibold { font-weight: 600; }
+.w-full { width: 100%; }
+
+.error-banner {
+  background: rgba(239, 68, 68, 0.1);
+  color: #EF4444;
+  padding: 12px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+@media (max-width: 900px) {
+  .prediction-grid {
+    grid-template-columns: 1fr;
+  }
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+}

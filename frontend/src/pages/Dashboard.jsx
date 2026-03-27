@@ -1,324 +1,341 @@
-import { useState, useMemo, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { toast } from 'react-toastify';
-import Navbar from '../components/Navbar';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
-import "./Dashboard.css";
+import React, { useState, useRef } from 'react';
+import { motion } from 'framer-motion';
+import {
+  Activity, Heart, Zap, FileText, TrendingUp, AlertTriangle,
+  CheckCircle, Clock, Upload, Users, BarChart2, Bell, Eye, XCircle
+} from 'lucide-react';
+import {
+  Chart as ChartJS, CategoryScale, LinearScale, PointElement,
+  LineElement, BarElement, Title, Tooltip, Filler, Legend,
+  ArcElement,
+} from 'chart.js';
+import { Line, Doughnut, Bar } from 'react-chartjs-2';
+import FloatingCard from '../components/FloatingCard';
+import AnimatedLoader from '../components/AnimatedLoader';
+import { useReports } from '../context/ReportContext';
+import './Dashboard.css';
 
-function DiabetesPage() {
-  const { user, authFetch } = useAuth();
-  const [formData, setFormData] = useState({
-    Glucose: "",
-    BloodPressure: "",
-    SkinThickness: "",
-    Insulin: "",
-    BMI: "",
-    DiabetesPedigreeFunction: "",
-    Age: ""
-  });
+ChartJS.register(
+  CategoryScale, LinearScale, PointElement, LineElement, BarElement,
+  Title, Tooltip, Filler, Legend, ArcElement
+);
 
-  const [result, setResult] = useState(null);
-  const [pdfFile, setPdfFile] = useState(null);
-  const [pdfResult, setPdfResult] = useState(null);
-  const [pdfError, setPdfError] = useState("");
-  const [dataSource, setDataSource] = useState("manual"); // "manual" or "pdf"
-  const [showHistory, setShowHistory] = useState(false);
-  const [historyTab, setHistoryTab] = useState("table"); 
-  const [myReports, setMyReports] = useState([]);
-  const [loading, setLoading] = useState(false);
+// ── RISK BADGE component ──
+const RiskBadge = ({ level }) => {
+  const map = {
+    Low:    { bg: 'rgba(16,185,129,0.12)', color: '#10B981' },
+    Medium: { bg: 'rgba(245,158,11,0.12)', color: '#F59E0B' },
+    High:   { bg: 'rgba(239,68,68,0.12)',  color: '#EF4444' },
+  };
+  const s = map[level] || map.Low;
+  return (
+    <span style={{
+      padding: '4px 12px', borderRadius: '20px', fontSize: '0.78rem',
+      fontWeight: 600, background: s.bg, color: s.color
+    }}>{level}</span>
+  );
+};
 
-  // Reference Metrics for UI feedback
-  const referenceMetrics = useMemo(() => [
-    { key: "Glucose", label: "Glucose", unit: "mg/dL", low: 70, high: 140, target: 100 },
-    { key: "BloodPressure", label: "Blood Pressure", unit: "mmHg", low: 60, high: 90, target: 75 },
-    { key: "BMI", label: "BMI", unit: "kg/m2", low: 18.5, high: 24.9, target: 22 },
-    { key: "Insulin", label: "Insulin", unit: "mu U/mL", low: 2, high: 25, target: 12 },
-    { key: "SkinThickness", label: "Skin Thickness", unit: "mm", low: 10, high: 45, target: 25 },
-    { key: "Age", label: "Age", unit: "years", low: 18, high: 65, target: 40 }
-  ], []);
+// ── STATUS BADGE ──
+const StatusBadge = ({ status }) => {
+  const map = {
+    Complete: { bg: 'rgba(16,185,129,0.12)', color: '#10B981' },
+    Pending:  { bg: 'rgba(245,158,11,0.12)', color: '#F59E0B' },
+    Reviewing:{ bg: 'rgba(99,102,241,0.12)', color: '#6366F1' },
+  };
+  const s = map[status] || map.Pending;
+  return <span style={{ padding: '4px 12px', borderRadius: '20px', fontSize: '0.78rem', fontWeight: 600, background: s.bg, color: s.color }}>{status}</span>;
+};
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-    setDataSource("manual");
+// ── SAMPLE DATA ──
+const SAMPLE_PATIENTS = [
+  { id: '#P-4821', name: 'Arjun Mehta',    scan: 'MRI Brain',        date: 'Mar 27, 2025', risk: 'High',   status: 'Reviewing' },
+  { id: '#P-3302', name: 'Priya Sharma',   scan: 'ECG Analysis',     date: 'Mar 27, 2025', risk: 'Medium', status: 'Pending'   },
+  { id: '#P-5519', name: 'Carlos Lima',    scan: 'CBC Report',       date: 'Mar 26, 2025', risk: 'Low',    status: 'Complete'  },
+  { id: '#P-2201', name: 'Emily Watson',   scan: 'Hypertension Scan',date: 'Mar 26, 2025', risk: 'Medium', status: 'Pending'   },
+  { id: '#P-1004', name: 'Jae-won Oh',     scan: 'Diabetes Analysis',date: 'Mar 25, 2025', risk: 'Low',    status: 'Complete'  },
+];
+
+const ALERTS = [
+  { level: 'high',   icon: <AlertTriangle size={16} />, color: '#EF4444', bg: 'rgba(239,68,68,0.06)',   text: 'High neurological risk detected', patient: 'Patient #4821', time: '2m ago' },
+  { level: 'medium', icon: <Zap size={16} />,           color: '#F59E0B', bg: 'rgba(245,158,11,0.06)',  text: 'Unusual cardiac marker found',    patient: 'Patient #3302', time: '18m ago' },
+  { level: 'low',    icon: <CheckCircle size={16} />,   color: '#10B981', bg: 'rgba(16,185,129,0.06)',  text: 'Scan complete, no anomalies',      patient: 'Patient #5519', time: '1h ago' },
+];
+
+// ══════════════════════════════
+// DASHBOARD COMPONENT
+// ══════════════════════════════
+const Dashboard = () => {
+  const { reports, loading, error } = useReports();
+  const [isDragging, setIsDragging] = useState(false);
+  const fileRef = useRef(null);
+
+  if (loading) return (
+    <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <AnimatedLoader size="large" text="Syncing Neural Data..." />
+    </div>
+  );
+
+  // ── Dynamic calculations ──
+  const reportsCount = reports.length;
+
+  const riskStats = reports.reduce((acc, r) => {
+    let risk = 'low';
+    if (r.type === 'diabetes') risk = (r.risk_level || 'low').toLowerCase().includes('high') ? 'high' : 'low';
+    else if (r.type === 'heart' || r.type === 'hypertension') {
+      const isHigh = typeof r.prediction === 'string' ? r.prediction.toLowerCase().includes('high') : r.prediction === 1;
+      risk = isHigh ? 'high' : 'low';
+    }
+    acc[risk]++;
+    return acc;
+  }, { low: 0, medium: 0, high: 0 });
+
+  const healthScoreRaw = reportsCount === 0 ? 100 : ((riskStats.low * 100 + riskStats.medium * 70 + riskStats.high * 30) / reportsCount);
+  const healthScore = `${Math.round(healthScoreRaw)}%`;
+
+  const latestResult = reports[0]
+    ? (reports[0].type === 'diabetes' ? reports[0].diabetes_prediction : reports[0].prediction || 'Scan Complete')
+    : 'No Data';
+
+  // ── Top stat cards ──
+  const topStats = [
+    { title: 'Total Scans Today', value: '48',              icon: <Activity size={22} />, color: '#2DD4BF', bg: 'rgba(45,212,191,0.1)' },
+    { title: 'Risk Alerts',       value: '3',               icon: <AlertTriangle size={22} />, color: '#EF4444', bg: 'rgba(239,68,68,0.1)', badge: true },
+    { title: 'Pending Reports',   value: '12',              icon: <Clock size={22} />,         color: '#F59E0B', bg: 'rgba(245,158,11,0.1)' },
+    { title: 'Patients Monitored',value: '284',             icon: <Users size={22} />,         color: '#6366F1', bg: 'rgba(99,102,241,0.1)' },
+    { title: 'Health Score',      value: healthScore,        icon: <Heart size={22} />,         color: '#10B981', bg: 'rgba(16,185,129,0.1)' },
+    { title: 'Records Logged',    value: String(reportsCount),icon: <FileText size={22} />,    color: '#0EA5E9', bg: 'rgba(14,165,233,0.1)' },
+  ];
+
+  // ── Weekly scan chart ──
+  const last7 = reports.slice(0, 7).reverse();
+  const weekLabels = last7.length > 0
+    ? last7.map(r => new Date(r.created_at).toLocaleDateString([], { month: 'short', day: 'numeric' }))
+    : ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  const weekData = last7.length > 0
+    ? last7.map((_, i) => 30 + i * 8 + Math.floor(Math.random() * 10))
+    : [38, 52, 45, 67, 59, 73, 48];
+
+  const lineChartData = {
+    labels: weekLabels,
+    datasets: [{
+      fill: true, label: 'Scans',
+      data: weekData,
+      borderColor: '#2DD4BF',
+      backgroundColor: 'rgba(45,212,191,0.12)',
+      tension: 0.45,
+      pointBackgroundColor: '#2DD4BF',
+      pointRadius: 4,
+    }],
   };
 
-  const fetchHistory = async () => {
-    try {
-      const response = await authFetch("/reports/history");
-      if (response.ok) {
-        const data = await response.json();
-        setMyReports(data.reports || []);
-      }
-    } catch (e) { console.error(e); }
+  const lineOpts = {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: { backgroundColor: 'white', titleColor: '#0F172A', bodyColor: '#64748B', borderColor: 'rgba(0,0,0,0.06)', borderWidth: 1, padding: 10 }
+    },
+    scales: {
+      y: { grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { color: '#94A3B8' } },
+      x: { grid: { display: false }, ticks: { color: '#94A3B8' } },
+    },
   };
 
-  useEffect(() => {
-    if (showHistory) fetchHistory();
-  }, [showHistory, authFetch]);
-
-  const analyzeReport = async () => {
-    setLoading(true);
-    setResult(null);
-    try {
-      const response = await fetch("http://127.0.0.1:8000/predict", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          Glucose: Number(formData.Glucose),
-          BloodPressure: Number(formData.BloodPressure),
-          SkinThickness: Number(formData.SkinThickness),
-          Insulin: Number(formData.Insulin),
-          BMI: Number(formData.BMI),
-          DiabetesPedigreeFunction: Number(formData.DiabetesPedigreeFunction),
-          Age: Number(formData.Age)
-        }),
-      });
-      const data = await response.json();
-      setResult(data);
-
-      await authFetch("/reports/save", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          inputs: formData,
-          outputs: data,
-          source: dataSource,
-        }),
-      });
-      if (showHistory) fetchHistory();
-      toast.success("Analysis complete and synchronized.");
-    } catch (error) {
-      toast.error("Analysis sequence failed.");
-    } finally { setLoading(false); }
+  // ── Risk distribution donut ──
+  const donutData = {
+    labels: ['Low Risk', 'Medium Risk', 'High Risk'],
+    datasets: [{
+      data: [riskStats.low || 10, riskStats.medium || 4, riskStats.high || 3],
+      backgroundColor: ['#10B981', '#F59E0B', '#EF4444'],
+      borderWidth: 0,
+      hoverOffset: 6,
+    }],
   };
-
-  const uploadPdf = async () => {
-    if (!pdfFile) { toast.warn("Select telemetry report"); return; }
-    const formDataPdf = new FormData();
-    formDataPdf.append("file", pdfFile);
-    setLoading(true);
-    try {
-      const response = await fetch("http://127.0.0.1:8000/upload-report", { method: "POST", body: formDataPdf });
-      const data = await response.json();
-      setPdfResult(data.extracted_parameters || {});
-      setDataSource("pdf");
-      toast.success("Extraction complete.");
-    } catch (error) { toast.error("PDF processing error."); }
-    finally { setLoading(false); }
+  const donutOpts = {
+    responsive: true, maintainAspectRatio: false,
+    cutout: '72%',
+    plugins: {
+      legend: { position: 'bottom', labels: { color: '#64748B', usePointStyle: true, boxWidth: 8, padding: 16 } },
+      tooltip: { backgroundColor: 'white', titleColor: '#0F172A', bodyColor: '#64748B', borderColor: 'rgba(0,0,0,0.06)', borderWidth: 1 },
+    },
   };
-
-  const applyPdfData = () => {
-    setFormData((prev) => ({ ...prev, ...pdfResult }));
-    setDataSource("manual");
-  };
-
-  const chartData = useMemo(() => {
-    return [...myReports].sort((a, b) => new Date(a.created_at) - new Date(b.created_at)).map(r => ({
-      date: new Date(r.created_at).toLocaleDateString(),
-      Glucose: r.glucose,
-      BMI: r.bmi,
-      BP: r.blood_pressure
-    }));
-  }, [myReports]);
-
-  const completionRate = Math.round((Object.values(formData).filter(v => v !== "").length / Object.keys(formData).length) * 100);
 
   return (
-    <div className="dashboard-root">
-      <Navbar />
+    <div className="dashboard">
+      <header className="page-header">
+        <motion.h1 initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
+          AI Health Intelligence
+        </motion.h1>
+        <p>Dynamic patient longitudinal modeling and real-time risk stratification</p>
+      </header>
 
-      <main className="db-container">
-        {/* Header */}
-        <div style={{ gridColumn: 'span 12', marginBottom: '32px' }} className="animate-db">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-            <div>
-              <h2 style={{ fontSize: 13, fontWeight: 700, color: 'var(--db-accent)', textTransform: 'uppercase', letterSpacing: '1px', marginBottom: 8 }}>DIABETES INTELLIGENCE</h2>
-              <h1 style={{ fontSize: 28, fontWeight: 800, color: 'var(--db-text)', margin: 0, letterSpacing: '-0.02em' }}>Clinical Metabolic Profiling</h1>
-            </div>
-            <button className="db-btn-secondary" onClick={() => setShowHistory(!showHistory)}>
-              {showHistory ? "CLOSE REGISTRY" : "VIEW HISTORICAL LOGS"}
-            </button>
-          </div>
+      {error && (
+        <div className="error-banner mb-6" style={{ marginBottom: '24px', opacity: 0.8 }}>
+          <AlertTriangle size={18} /> {error}
         </div>
+      )}
 
-        {/* Global Stats */}
-        <div className="db-card animate-db" style={{ gridColumn: 'span 4', animationDelay: '0.1s' }}>
-          <span className="metric-label">Prediction Status</span>
-          <div className="metric-value" style={{ color: result?.diabetes_prediction === 'Positive' ? 'var(--db-crimson)' : (result ? 'var(--db-emerald)' : 'var(--db-text)') }}>
-            {result?.diabetes_prediction || "WAITING"}
-          </div>
-          <p style={{ color: 'var(--db-muted)', fontSize: 13, marginTop: 8 }}>
-            {result ? `Model Confidence: ${result.ml_model_insights?.probability || 98.2}%` : "Awaiting input telemetry..."}
-          </p>
-        </div>
-
-        <div className="db-card animate-db" style={{ gridColumn: 'span 4', animationDelay: '0.15s' }}>
-          <span className="metric-label">Risk Stratification</span>
-          <div className="metric-value" style={{ color: result?.risk_level === 'High Risk' ? 'var(--db-crimson)' : 'var(--db-amber)' }}>
-            {result?.risk_level || "PENDING"}
-          </div>
-          <div className="risk-meter">
-            <div className="risk-fill" style={{ width: `${result?.risk_level === 'High Risk' ? 85 : 30}%`, background: result?.risk_level === 'High Risk' ? 'var(--db-crimson)' : 'var(--db-accent)' }} />
-          </div>
-        </div>
-
-        <div className="db-card animate-db" style={{ gridColumn: 'span 4', animationDelay: '0.2s' }}>
-          <span className="metric-label">Telemetry Completion</span>
-          <div className="metric-value">{completionRate}%</div>
-          <div className="risk-meter">
-            <div className="risk-fill" style={{ width: `${completionRate}%`, background: 'var(--db-emerald)' }} />
-          </div>
-        </div>
-
-        {/* History Section overlay */}
-        {showHistory && (
-          <div className="db-card animate-db" style={{ gridColumn: 'span 12', marginBottom: '24px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
-              <h3 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>Telemetry Registry History</h3>
-              <div className="db-nav-links" style={{ height: 'auto', background: 'var(--db-card)', padding: 4, borderRadius: 10 }}>
-                <button className={`db-nav-item ${historyTab === 'table' ? 'active' : ''}`} onClick={() => setHistoryTab('table')} style={{ border: 'none', cursor: 'pointer' }}>Registry</button>
-                <button className={`db-nav-item ${historyTab === 'trends' ? 'active' : ''}`} onClick={() => setHistoryTab('trends')} style={{ border: 'none', cursor: 'pointer' }}>Trajectories</button>
+      {/* ── TOP STATS ── */}
+      <div className="stats-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))' }}>
+        {topStats.map((stat, idx) => (
+          <motion.div
+            key={idx}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: idx * 0.07 }}
+          >
+            <FloatingCard className="stat-card">
+              <div className="stat-icon" style={{ background: stat.bg, position: 'relative' }}>
+                <span style={{ color: stat.color }}>{stat.icon}</span>
+                {stat.badge && <span className="stat-badge">!</span>}
               </div>
-            </div>
+              <div className="stat-info">
+                <h3>{stat.title}</h3>
+                <h2 style={{ fontSize: stat.value.length > 12 ? '1.3rem' : '1.8rem', color: stat.color }}>{stat.value}</h2>
+              </div>
+            </FloatingCard>
+          </motion.div>
+        ))}
+      </div>
 
-            {myReports.length === 0 ? <p style={{ color: 'var(--db-muted)', textAlign: 'center', padding: '40px 0' }}>No telemetry logs found.</p> : (
-              <div className="db-table-container">
-                {historyTab === 'table' ? (
-                  <table className="db-table">
-                    <thead>
-                      <tr>
-                        <th>Timestamp</th>
-                        <th>Glucose (mg/dL)</th>
-                        <th>BMI index</th>
-                        <th>Prediction Vector</th>
-                        <th>Risk Map</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {myReports.map(r => (
-                        <tr key={r.id}>
-                          <td style={{ fontWeight: 600 }}>{new Date(r.created_at).toLocaleDateString()}</td>
-                          <td>{r.glucose}</td>
-                          <td>{r.bmi}</td>
-                          <td>{r.diabetes_prediction}</td>
-                          <td>
-                            <span className={`db-badge ${r.risk_level === 'High Risk' ? 'db-badge-crimson' : 'db-badge-green'}`}>
-                              {r.risk_level}
-                            </span>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                ) : (
-                  <div style={{ width: '100%', height: 350, padding: 20 }}>
-                    <ResponsiveContainer>
-                      <LineChart data={chartData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255, 255, 255, 0.05)" />
-                        <XAxis dataKey="date" axisLine={{stroke: 'rgba(255, 255, 255, 0.1)'}} tick={{fill: 'var(--db-muted)', fontSize: 11}} />
-                        <YAxis axisLine={{stroke: 'rgba(255, 255, 255, 0.1)'}} tick={{fill: 'var(--db-muted)', fontSize: 11}} />
-                        <Tooltip contentStyle={{ background: 'var(--db-card)', border: '1px solid var(--db-border)', borderRadius: '12px' }} />
-                        <Legend />
-                        <Line type="monotone" dataKey="Glucose" stroke="var(--db-accent)" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
-                        <Line type="monotone" dataKey="BMI" stroke="var(--db-emerald)" strokeWidth={3} />
-                        <Line type="monotone" dataKey="BP" stroke="var(--db-amber)" strokeWidth={3} />
-                      </LineChart>
-                    </ResponsiveContainer>
+      {/* ── RECENT PATIENT SCANS TABLE ── */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+        <FloatingCard className="table-card" style={{ marginBottom: '24px' }}>
+          <div className="card-header">
+            <h3>Recent Patient Scans</h3>
+            <span className="live-indicator"><span className="dot"></span> Live</span>
+          </div>
+          <div className="table-wrapper">
+            <table className="scan-table">
+              <thead>
+                <tr>
+                  <th>Patient ID</th>
+                  <th>Name</th>
+                  <th>Scan Type</th>
+                  <th>Date</th>
+                  <th>Risk Level</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {SAMPLE_PATIENTS.map((p, i) => (
+                  <tr key={i}>
+                    <td><code style={{ color: '#0EA5E9', fontSize: '0.85rem' }}>{p.id}</code></td>
+                    <td><strong style={{ color: '#0F172A', fontSize: '0.9rem' }}>{p.name}</strong></td>
+                    <td style={{ color: '#64748B', fontSize: '0.88rem' }}>{p.scan}</td>
+                    <td style={{ color: '#94A3B8', fontSize: '0.85rem' }}>{p.date}</td>
+                    <td><RiskBadge level={p.risk} /></td>
+                    <td><StatusBadge status={p.status} /></td>
+                    <td>
+                      <button className="table-action-btn"><Eye size={14} /> View</button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </FloatingCard>
+      </motion.div>
+
+      {/* ── CHARTS + ALERTS ROW ── */}
+      <div className="main-grid three-col">
+        {/* Weekly Chart */}
+        <FloatingCard delay={0.4} className="chart-card span-2">
+          <div className="card-header">
+            <h3>Weekly Scan Volume</h3>
+            <span className="live-indicator"><span className="dot"></span> Real-time Sync</span>
+          </div>
+          <div className="chart-container" style={{ height: '220px' }}>
+            <Line options={lineOpts} data={lineChartData} />
+          </div>
+        </FloatingCard>
+
+        {/* Donut */}
+        <FloatingCard delay={0.45} className="chart-card">
+          <div className="card-header"><h3>Risk Distribution</h3></div>
+          <div className="chart-container" style={{ height: '220px' }}>
+            <Doughnut options={donutOpts} data={donutData} />
+          </div>
+        </FloatingCard>
+      </div>
+
+      {/* ── ALERTS + UPLOAD ROW ── */}
+      <div className="main-grid two-col" style={{ marginTop: '24px' }}>
+        {/* Alerts Panel */}
+        <FloatingCard delay={0.5} className="alerts-card">
+          <div className="card-header">
+            <h3><Bell size={16} style={{ marginRight: 6, verticalAlign: 'middle' }} />Recent Alerts</h3>
+          </div>
+          <div className="alerts-list">
+            {ALERTS.map((a, i) => (
+              <div key={i} className="alert-item" style={{ background: a.bg }}>
+                <span className="alert-icon" style={{ color: a.color }}>{a.icon}</span>
+                <div className="alert-body">
+                  <p style={{ color: '#0F172A', fontWeight: 600, fontSize: '0.9rem', marginBottom: '2px' }}>{a.text}</p>
+                  <span style={{ color: '#94A3B8', fontSize: '0.8rem' }}>{a.patient} · {a.time}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </FloatingCard>
+
+        {/* Quick Upload */}
+        <FloatingCard delay={0.55} className="upload-card">
+          <div className="card-header"><h3><Upload size={16} style={{ marginRight: 6, verticalAlign: 'middle' }} />Quick Scan Upload</h3></div>
+          <div
+            className={`drop-zone ${isDragging ? 'dragging' : ''}`}
+            onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+            onDragLeave={() => setIsDragging(false)}
+            onDrop={(e) => { e.preventDefault(); setIsDragging(false); }}
+            onClick={() => fileRef.current?.click()}
+          >
+            <input ref={fileRef} type="file" hidden accept=".dcm,.jpg,.png,.pdf,.jpeg" />
+            <div className="drop-icon"><Upload size={28} color="#2DD4BF" /></div>
+            <p className="drop-title">Drop patient scan here</p>
+            <p className="drop-sub">or click to browse files</p>
+            <div className="drop-formats">
+              {['DICOM', 'JPG', 'PNG', 'PDF'].map(f => <span key={f} className="format-tag">{f}</span>)}
+            </div>
+          </div>
+        </FloatingCard>
+      </div>
+
+      {/* ── RECENT ACTIVITY TIMELINE ── */}
+      <div style={{ marginTop: '24px' }}>
+        <FloatingCard delay={0.6} className="activity-card">
+          <h3 className="mb-4">Recent Status Insights</h3>
+          <div className="timeline">
+            {reports.slice(0, 5).map((r, i) => (
+              <div className="timeline-item" key={i}>
+                <div className={`timeline-dot ${i === 0 ? 'success' : 'active'}`}></div>
+                <div className="timeline-content">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <h4 style={{ margin: 0 }}>{r.category || 'Clinical Scan'}</h4>
+                    <span style={{ fontSize: '0.75rem', opacity: 0.6 }}>
+                      {new Date(r.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </span>
                   </div>
-                )}
+                  <p style={{ fontSize: '0.85rem', marginTop: '4px' }}>
+                    {r.type === 'diabetes' ? r.diabetes_prediction : (r.prediction || 'Interpretation complete')}
+                  </p>
+                </div>
+              </div>
+            ))}
+            {reports.length === 0 && (
+              <div className="timeline-item">
+                <div className="timeline-dot success"></div>
+                <div className="timeline-content">
+                  <h4>Neural Link Established</h4>
+                  <p>Ready for initial biometrics ingest — run an analysis to populate the log</p>
+                </div>
               </div>
             )}
           </div>
-        )}
-
-        {/* Input Panels */}
-        <div className="db-card animate-db" style={{ gridColumn: 'span 8', animationDelay: '0.3s' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-            <div>
-              <h3 style={{ fontSize: 18, fontWeight: 700, margin: 0 }}>Telemetry Ingestion</h3>
-              <p style={{ color: 'var(--db-muted)', fontSize: 13, margin: '4px 0 0' }}>Synchronize clinical parameters via manual link or extraction.</p>
-            </div>
-            <div className="db-nav-links" style={{ height: 'auto', background: 'var(--db-bg)', padding: 4, borderRadius: 10 }}>
-              <button className={`db-nav-item ${dataSource === 'pdf' ? 'active' : ''}`} onClick={() => setDataSource('pdf')} style={{ border: 'none', cursor: 'pointer', background: 'transparent' }}>Extract Report</button>
-              <button className={`db-nav-item ${dataSource === 'manual' ? 'active' : ''}`} onClick={() => setDataSource('manual')} style={{ border: 'none', cursor: 'pointer', background: 'transparent' }}>Manual Link</button>
-            </div>
-          </div>
-
-          {dataSource === 'pdf' ? (
-            <div style={{ padding: '40px', border: '1px solid var(--db-border)', borderRadius: '16px', textAlign: 'center', background: 'var(--db-card)' }}>
-               <input type="file" accept="application/pdf" onChange={(e) => setPdfFile(e.target.files[0])} style={{ display: 'block', margin: '0 auto 20px', color: 'var(--db-muted)' }} />
-               <button className="db-btn-primary" onClick={uploadPdf} style={{ margin: '0 auto' }}>START EXTRACTION</button>
-               {pdfResult && (
-                 <div style={{ marginTop: 24, padding: 16, background: 'rgba(255,255,255,0.03)', borderRadius: 12, textAlign: 'left' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                      <span style={{ fontWeight: 700, fontSize: 13 }}>EXTRACTED DATA</span>
-                      <button className="db-btn-secondary" style={{ padding: '4px 12px', fontSize: 11 }} onClick={applyPdfData}>MAP TO FORM</button>
-                    </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12 }}>
-                      {Object.entries(pdfResult).map(([k, v]) => (
-                        <div key={k} style={{ fontSize: 12 }}><span style={{ color: 'var(--db-muted)' }}>{k}:</span> {v}</div>
-                      ))}
-                    </div>
-                 </div>
-               )}
-            </div>
-          ) : (
-            <div className="db-form">
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20 }}>
-                {Object.keys(formData).map((key) => (
-                  <div key={key} className="db-input-group">
-                    <span>{key.replace(/([A-Z])/g, ' $1').trim()}</span>
-                    <input className="db-input" name={key} type="number" step="any" value={formData[key]} onChange={handleChange} placeholder="0.00" />
-                  </div>
-                ))}
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 12 }}>
-                 <button 
-                   className={`db-btn-primary ${completionRate === 100 ? 'pulse-glow' : ''}`} 
-                   onClick={analyzeReport} 
-                   disabled={loading}
-                 >
-                   {loading ? "PROCESSING..." : "EXECUTE ANALYSIS"}
-                 </button>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Sidebar Insights */}
-        <div style={{ gridColumn: 'span 4', display: 'flex', flexDirection: 'column', gap: 24 }}>
-           <div className="db-card animate-db" style={{ animationDelay: '0.4s' }}>
-              <h3 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 16px' }}>Reference Diagnostics</h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                {referenceMetrics.map(m => {
-                  const val = Number(formData[m.key]);
-                  const status = !formData[m.key] ? 'neutral' : (val < m.low || val > m.high ? 'alert' : 'ok');
-                  return (
-                    <div key={m.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 12px', background: 'var(--db-bg)', borderRadius: 8, border: '1px solid var(--db-border)' }}>
-                      <div style={{ fontSize: 13, fontWeight: 600 }}>{m.label}</div>
-                      <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: 14, fontWeight: 800, color: status === 'alert' ? 'var(--db-crimson)' : 'var(--db-text)' }}>{formData[m.key] || '--'}</div>
-                        <div style={{ fontSize: 10, color: 'var(--db-muted)' }}>Target: {m.target} {m.unit}</div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-           </div>
-
-           <div className="db-card animate-db" style={{ animationDelay: '0.5s' }}>
-              <h3 style={{ fontSize: 16, fontWeight: 700, margin: '0 0 16px' }}>Neuro-Insights</h3>
-              <div style={{ background: 'rgba(139, 92, 246, 0.05)', border: '1px solid rgba(139, 92, 246, 0.15)', padding: 16, borderRadius: 12 }}>
-                <p style={{ margin: 0, fontSize: 12, color: 'var(--db-muted)', lineHeight: 1.6 }}>
-                  {result ? result.possible_conditions?.join(". ") : "AI is awaiting metabolic telemetry to generate predictive insights."}
-                </p>
-              </div>
-              <button className="db-btn-secondary" style={{ width: '100%', marginTop: 16, fontSize: 12 }}>GENERATE FULL CLINICAL REPORT</button>
-           </div>
-        </div>
-      </main>
+        </FloatingCard>
+      </div>
     </div>
   );
-}
+};
 
-export default DiabetesPage;
+export default Dashboard;
