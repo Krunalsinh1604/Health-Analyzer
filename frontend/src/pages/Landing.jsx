@@ -8,6 +8,12 @@ import {
   Activity, Heart, Zap, Lock,
   ArrowRight, Star, Upload, CheckCircle, BarChart3
 } from 'lucide-react';
+import healthHero from '../assets/health_hero.png';
+import dnaStrand from '../assets/dna_strand.png';
+import heartHands from '../assets/heart_hands.png';
+import heartEcg from '../assets/heart_ecg.png';
+import medicalCross from '../assets/medical_cross.png';
+import mainLogo from '../assets/logo.png';
 import './Landing.css';
 
 // --- ANIMATED COUNTER HOOK ---
@@ -69,9 +75,8 @@ const Landing = () => {
 
       {/* ── NAV ── */}
       <nav className="landing-nav glass-panel">
-        <div className="logo">
-          <div className="logo-glow pulse-logo"><div className="logo-core"></div></div>
-          <h2>AntiGrav AI</h2>
+        <div className="logo" onClick={() => navigate('/')} style={{ cursor: 'pointer' }}>
+          <img src={mainLogo} alt="Health Analyzer" className="main-logo-img" />
         </div>
         <div className="nav-links">
           <a href="#features">Features</a>
@@ -116,28 +121,14 @@ const Landing = () => {
           <div className="floating-sphere sphere-1"></div>
           <div className="floating-sphere sphere-2"></div>
 
-          {/* Floating medical icons */}
-          <motion.div className="float-icon fi-1" animate={{ y: [0, -12, 0] }} transition={{ duration: 3, repeat: Infinity }}>
-            <Heart size={22} color="#EF4444" />
+          {/* Hero photo */}
+          <motion.div
+            className="hero-photo-wrap"
+            animate={{ y: [0, -8, 0] }}
+            transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+          >
+            <img src={healthHero} alt="Be Healthy" className="hero-photo" />
           </motion.div>
-          <motion.div className="float-icon fi-2" animate={{ y: [0, -10, 0] }} transition={{ duration: 3.5, repeat: Infinity, delay: 0.5 }}>
-            <Activity size={22} color="#2DD4BF" />
-          </motion.div>
-          <motion.div className="float-icon fi-3" animate={{ y: [0, -14, 0] }} transition={{ duration: 4, repeat: Infinity, delay: 1 }}>
-            <BarChart3 size={22} color="#0EA5E9" />
-          </motion.div>
-          <motion.div className="float-icon fi-4" animate={{ y: [0, -10, 0] }} transition={{ duration: 2.8, repeat: Infinity, delay: 0.8 }}>
-            <Shield size={22} color="#10B981" />
-          </motion.div>
-
-          <div className="floating-glass-card glass-panel">
-            <div className="pulse-scan"></div>
-            <h3>AI Neural Scan</h3>
-            <div className="scan-line"></div>
-            <div className="scan-line"></div>
-            <div className="scan-line w-half"></div>
-            <div className="scan-badge"><CheckCircle size={14} />&nbsp;Analysis Complete</div>
-          </div>
         </motion.div>
       </section>
 
@@ -165,7 +156,7 @@ const Landing = () => {
       <Section className="section how-it-works" id="how-it-works">
         <div className="section-header">
           <p className="section-badge">Simple Process</p>
-          <h2>How AntiGrav AI Works</h2>
+          <h2>How Health Analyzer Works</h2>
           <p className="section-sub">Three steps from upload to clinical insight</p>
         </div>
         <div className="steps-flow">
@@ -201,6 +192,18 @@ const Landing = () => {
           <h2>Built for Clinical Excellence</h2>
           <p className="section-sub">Everything you need for next-generation diagnostics</p>
         </div>
+
+        {/* DNA visual accent */}
+        <motion.div
+          className="features-dna-banner"
+          initial={{ opacity: 0, x: -40 }}
+          whileInView={{ opacity: 1, x: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.8 }}
+        >
+          <img src={dnaStrand} alt="DNA Strand" className="dna-img" />
+        </motion.div>
+
         <div className="features-grid">
           {[
             { icon: <Brain size={28} />, title: 'Neural Scan Analysis', desc: 'Deep learning models detect abnormalities in MRI, CT, and X-ray scans with 98.7% accuracy.' },
@@ -208,7 +211,7 @@ const Landing = () => {
             { icon: <Zap size={28} />, title: 'Real-Time Diagnostics', desc: 'Results in under 60 seconds. No waiting, no delays, instant clinical insights for your team.' },
             { icon: <Lock size={28} />, title: 'HIPAA Compliant', desc: 'End-to-end encrypted. Patient data never leaves your secure environment. Fully auditable.' },
             { icon: <LayoutDashboard size={28} />, title: 'Doctor Dashboard', desc: 'Intuitive interface built for clinicians. Track patients, manage reports, and collaborate.' },
-            { icon: <Globe size={28} />, title: 'Multi-Language Support', desc: 'Available in 40+ languages, making AntiGrav AI accessible to global healthcare teams everywhere.' },
+            { icon: <Globe size={28} />, title: 'Multi-Language Support', desc: 'Available in 40+ languages, making Health Analyzer accessible to global healthcare teams everywhere.' },
           ].map((f, i) => (
             <motion.div
               key={i}
@@ -238,6 +241,16 @@ const Landing = () => {
             <Counter value={60} suffix="s" label="Average Analysis Time" inView={impactInView} />
             <Counter value={99} suffix=".9%" label="Uptime Guaranteed" inView={impactInView} />
           </div>
+          {/* ECG visual */}
+          <motion.div
+            className="impact-ecg-wrap"
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8, delay: 0.3 }}
+          >
+            <img src={heartEcg} alt="Heart ECG" className="impact-ecg-img" />
+          </motion.div>
         </div>
       </Section>
 
@@ -246,11 +259,21 @@ const Landing = () => {
         <div className="section-header">
           <p className="section-badge">Testimonials</p>
           <h2>Trusted by Leading Clinicians</h2>
-          <p className="section-sub">Hear from doctors saving lives with AntiGrav AI</p>
+          <p className="section-sub">Hear from doctors saving lives with Health Analyzer</p>
         </div>
+        {/* Heart in hands visual */}
+        <motion.div
+          className="testimonial-photo-row"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ duration: 0.7 }}
+        >
+          <img src={heartHands} alt="Heart in Hands" className="testimonial-heart-img" />
+        </motion.div>
         <div className="testimonials-grid">
           {[
-            { quote: 'AntiGrav AI caught a tumor marker our team missed in 3 rounds of review. It\'s now integral to our workflow.', name: 'Dr. Priya Sharma', role: 'Neurologist, Apollo Hospitals' },
+            { quote: 'Health Analyzer caught a tumor marker our team missed in 3 rounds of review. It\'s now integral to our workflow.', name: 'Dr. Priya Sharma', role: 'Neurologist, Apollo Hospitals' },
             { quote: 'We reduced diagnostic turnaround by 70% in our radiology department. The ROI was immediate and undeniable.', name: 'Dr. James Osei', role: 'Radiologist, NHS UK' },
             { quote: 'The risk prediction model has transformed how we manage high-risk patients. An incredible tool for cardiologists.', name: 'Dr. Mei Lin', role: 'Cardiologist, Singapore General' },
           ].map((t, i) => (
@@ -296,8 +319,17 @@ const Landing = () => {
       {/* ── CTA ── */}
       <Section className="section cta-section">
         <div className="cta-inner glass-panel">
+          <motion.div
+            className="cta-photo-wrap"
+            initial={{ opacity: 0, scale: 0.9 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+          >
+            <img src={medicalCross} alt="Medical AI" className="cta-photo" />
+          </motion.div>
           <h2>Ready to Transform Your Practice?</h2>
-          <p>Join 500+ hospitals using AntiGrav AI to save lives every day</p>
+          <p>Join 500+ hospitals using Health Analyzer to save lives every day</p>
           <div className="cta-actions">
             <GlowButton onClick={() => navigate('/register')} className="cta-btn">Start Free Trial</GlowButton>
             <GlowButton variant="outline" className="cta-btn">Book a Demo</GlowButton>

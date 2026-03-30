@@ -74,3 +74,34 @@
 .login-footer a:hover {
   opacity: 0.8;
 }
+
+.auth-logo-img {
+  height: 100px;
+  width: auto;
+  margin-bottom: 16px;
+  object-fit: contain;
+}
+
+.select-input {
+  width: 100%;
+  padding: 12px 12px 12px 42px;
+  background: var(--input-bg);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  color: var(--text-dark);
+  font-size: 0.95rem;
+  transition: all 0.3s ease;
+  appearance: none;
+  cursor: pointer;
+}
+
+.select-input:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+  outline: none;
+}
+
+.select-input option {
+  background: white;
+  color: var(--text-dark);
+}

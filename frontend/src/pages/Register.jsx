@@ -4,13 +4,15 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import FloatingCard from '../components/FloatingCard';
 import GlowButton from '../components/GlowButton';
-import { Mail, Lock, User, AlertCircle, Phone } from 'lucide-react';
+import { Mail, Lock, User, AlertCircle, Phone, Droplets } from 'lucide-react';
+import mainLogo from '../assets/logo.png';
 import './Login.css'; // Reuse Login styles
 
 const Register = () => {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [mobileNo, setMobileNo] = useState('');
+  const [bloodGroup, setBloodGroup] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -24,7 +26,7 @@ const Register = () => {
     setIsLoading(true);
     
     try {
-      const success = await register(fullName, email, mobileNo, password);
+      const success = await register(fullName, email, mobileNo, bloodGroup, password);
       if (success) {
         navigate('/login', { state: { message: 'Registration successful! Please login.' } });
       } else {
@@ -49,9 +51,9 @@ const Register = () => {
       >
         <FloatingCard className="login-card" hover={false}>
           <div className="login-header">
-            <div className="logo-glow"><div className="logo-core"></div></div>
+            <img src={mainLogo} alt="Health Analyzer" className="auth-logo-img" />
             <h2>Create Account</h2>
-            <p>Join the AntiGrav AI Medical Platform</p>
+            <p>Join the Health Analyzer Medical Platform</p>
           </div>
 
           <form onSubmit={handleSubmit} className="login-form">
@@ -90,6 +92,29 @@ const Register = () => {
             </div>
 
             <div className="form-group">
+              <label>Blood Group</label>
+              <div className="input-wrapper">
+                <Droplets size={18} className="input-icon" />
+                <select 
+                  required 
+                  value={bloodGroup} 
+                  onChange={(e) => setBloodGroup(e.target.value)}
+                  className="select-input"
+                >
+                  <option value="" disabled>Select Blood Group</option>
+                  <option value="A+">A+</option>
+                  <option value="A-">A-</option>
+                  <option value="B+">B+</option>
+                  <option value="B-">B-</option>
+                  <option value="AB+">AB+</option>
+                  <option value="AB-">AB-</option>
+                  <option value="O+">O+</option>
+                  <option value="O-">O-</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="form-group">
               <label>Email Address</label>
               <div className="input-wrapper">
                 <Mail size={18} className="input-icon" />
@@ -98,7 +123,7 @@ const Register = () => {
                   required 
                   value={email} 
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="doctor@antigrav.ai"
+                  placeholder="doctor@healthanalyzer.ai"
                 />
               </div>
             </div>

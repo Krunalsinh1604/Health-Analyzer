@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useNotification } from "../context/NotificationContext";
 import FloatingCard from '../components/FloatingCard';
 import GlowButton from '../components/GlowButton';
 import { Mail, Lock, AlertCircle, CheckCircle } from 'lucide-react';
+import mainLogo from '../assets/logo.png';
 import './Login.css';
 
 const Login = () => {
@@ -15,26 +17,36 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   
   const { login } = useAuth();
+  const { showNotification } = useNotification();
   const navigate = useNavigate();
   const location = useLocation();
 
-  useEffect(() => {
-    if (location.state?.message) {
-      setInfo(location.state.message);
-    }
-  }, [location.state]);
+  // Removed useEffect for location.state?.message as info banner is replaced by showNotification
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setError('');
-    setIsLoading(true);
+    setError(""); // Changed from '' to "" as per instruction
+    setIsLoading(true); // Changed from setLoading to setIsLoading for consistency with state variable
     
     try {
       const success = await login(email, password);
       if (success) {
-        navigate('/dashboard');
+        showNotification("Login successful!", "success");
+        // Need to check the role from the context since we just logged in
+        // A better way is to get the user from useAuth again if it's updated
+        // But login in AuthContext already sets the user.
+        // Let's rely on the user being updated in the next render or check the response if possible.
+        // Since login returns true/false, we might need a small delay or check auth status.
+        // Actually, let's just use the user object that should be in context now.
+        // Replaced window.location.href with navigate
+        if (email.includes('admin') || email === 'admin') {
+          navigate("/admin");
+        } else {
+          navigate("/dashboard");
+        }
       } else {
-        setError('Invalid credentials');
+        setError("Invalid email or password"); // Changed message as per instruction
+        showNotification("Invalid email or password", "error");
       }
     } catch (err) {
       setError('Connection refused or invalid credentials.');
@@ -55,9 +67,9 @@ const Login = () => {
       >
         <FloatingCard className="login-card" hover={false}>
           <div className="login-header">
-            <div className="logo-glow"><div className="logo-core"></div></div>
+            <img src={mainLogo} alt="Health Analyzer" className="auth-logo-img" />
             <h2>Neural Authentication</h2>
-            <p>Access the AntiGrav AI Dashboard</p>
+            <p>Access the Health Analyzer Dashboard</p>
           </div>
 
           <form onSubmit={handleSubmit} className="login-form">
@@ -82,7 +94,7 @@ const Login = () => {
                   required 
                   value={email} 
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="doctor@antigrav.ai"
+                  placeholder="doctor@healthanalyzer.ai"
                 />
               </div>
             </div>

@@ -5,6 +5,8 @@ import FloatingCard from '../components/FloatingCard';
 import GlowButton from '../components/GlowButton';
 import FloatingInput from '../components/FloatingInput';
 import AnimatedLoader from '../components/AnimatedLoader';
+import HealthInfoCard from '../components/HealthInfoCard';
+import { MicroscopeSVG } from '../components/HealthIllustrations';
 import api from '../services/api';
 import { useReports } from '../context/ReportContext';
 import './DiseasePrediction.css';
@@ -160,30 +162,81 @@ const CBC = () => {
             <h3 className="mb-4 text-lg font-semibold" style={{ marginBottom: '24px' }}>Manual Vector Entry</h3>
             <form onSubmit={handleManualAnalyze}>
               <div className="form-grid">
-                {fieldConfig.map((field) => (
-                  <FloatingInput
-                    key={field.key}
-                    name={field.key}
-                    label={field.label}
-                    type="number"
-                    step="any"
-                    value={formData[field.key]}
-                    onChange={handleManualChange}
-                    icon={field.icon}
-                    required={!file}
-                  />
-                ))}
+                {fieldConfig.map((field) => {
+                  const helperText = {
+                    Hemoglobin: "Protein in red blood cells that carries oxygen. Normal: 12–17 g/dL",
+                    RBC: "Red Blood Cells — oxygen carriers in your blood. Normal: 4.2–5.9 M/µL",
+                    WBC: "White Blood Cells — your immune fighters. Normal: 4.5–11.0 K/µL",
+                    Platelets: "Tiny cells that stop bleeding. Normal: 150–400 K/µL",
+                    MCV: "Mean Corpuscular Volume — average size of RBCs. Normal: 80–100 fL",
+                    MCH: "Mean Corpuscular Hemoglobin — average amount per RBC. Normal: 27–33 pg",
+                    Neutrophils: "Type of WBC that fights infections. Normal: 40–60%",
+                    Lymphocytes: "Type of WBC that manages immune response. Normal: 20–40%"
+                  }[field.key];
+
+                  const infoContent = {
+                    Hemoglobin: { desc: "Protein in red blood cells.", why: "Essential for carrying oxygen from lungs to the rest of the body.", abnormal: "Low levels indicate anemia; high levels may suggest polycythemia.", link: "https://en.wikipedia.org/wiki/Hemoglobin" },
+                    RBC: { desc: "Red Blood Cell count.", why: "Carries oxygen and carbon dioxide throughout the body.", abnormal: "Low RBC may indicate blood loss or vitamin deficiency.", link: "https://en.wikipedia.org/wiki/Red_blood_cell" },
+                    WBC: { desc: "White Blood Cell count.", why: "Part of the immune system that helps the body fight infection and disease.", abnormal: "High WBC often indicates infection or inflammation.", link: "https://en.wikipedia.org/wiki/White_blood_cell" },
+                    Platelets: { desc: "Smallest blood cells involved in clotting.", why: "Necessary to prevent excessive bleeding by forming clots.", abnormal: "Low platelets (thrombocytopenia) increase bruising/bleeding risk.", link: "https://en.wikipedia.org/wiki/Platelet" },
+                    MCV: { desc: "Average volume/size of red blood cells.", why: "Helps classify types of anemia (e.g., microcytic vs macrocytic).", abnormal: "Abnormal sizes suggest specific nutritional or genetic issues.", link: "https://en.wikipedia.org/wiki/Mean_corpuscular_volume" },
+                    MCH: { desc: "Average mass of hemoglobin per red blood cell.", why: "Further characterizes the makeup of red blood cells.", abnormal: "Often parallels MCV changes.", link: "https://en.wikipedia.org/wiki/Mean_corpuscular_hemoglobin" },
+                    Neutrophils: { desc: "The most abundant type of white blood cells.", why: "First responders to bacterial infections.", abnormal: "High levels (neutrophilia) commonly point to acute infection.", link: "https://en.wikipedia.org/wiki/Neutrophil" },
+                    Lymphocytes: { desc: "Immune cells that include B cells and T cells.", why: "Vital for viral defense and long-term immunity.", abnormal: "High levels may indicate viral infection or chronic inflammation.", link: "https://en.wikipedia.org/wiki/Lymphocyte" }
+                  }[field.key];
+
+                  return (
+                    <div key={field.key} className="input-group-enhanced">
+                      <div className="flex items-center gap-1 mb-1">
+                        <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#475569' }}>
+                          {field.label}
+                        </label>
+                        <HealthInfoCard 
+                          title={field.key}
+                          description={infoContent.desc}
+                          whyItMatters={infoContent.why}
+                          abnormalIndicators={infoContent.abnormal}
+                          learnMoreLink={infoContent.link}
+                        />
+                      </div>
+                      <FloatingInput
+                        name={field.key}
+                        label=""
+                        type="number"
+                        step="any"
+                        value={formData[field.key]}
+                        onChange={handleManualChange}
+                        icon={field.icon}
+                        required={!file}
+                      />
+                      <p style={{ fontSize: '0.75rem', color: '#64748B', marginTop: '4px' }}>{helperText}</p>
+                    </div>
+                  );
+                })}
               </div>
-              <div className="form-actions mt-4" style={{ marginTop: '32px' }}>
-                <GlowButton 
-                  type="submit" 
-                  disabled={loading || (!file && !isFormValid)} 
-                  loading={loading && !file}
-                  loadingText="Processing..."
-                  className="w-full"
+              <div className="form-actions mt-6" style={{ marginTop: '32px' }}>
+                <button
+                  type="submit"
+                  disabled={loading || (!file && !isFormValid)}
+                  className="bg-teal-500 hover:bg-teal-600 text-white font-semibold py-4 px-8 rounded-2xl w-full text-lg shadow-md transition-all duration-200 flex flex-col items-center justify-center gap-1"
+                  aria-label="Check Blood Results"
                 >
-                  Analyze Manually
-                </GlowButton>
+                  <div className="flex items-center gap-3">
+                    {loading && !file ? (
+                      <>
+                        <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full" />
+                        <span>⏳ Analysing... Please wait</span>
+                      </>
+                    ) : (
+                      <>
+                        <span>🧪 Check My Blood Results</span>
+                      </>
+                    )}
+                  </div>
+                </button>
+                <p className="text-center text-xs text-slate-500 mt-2 italic">
+                  *Enter your lab values to get an AI explanation of your CBC report
+                </p>
               </div>
             </form>
           </FloatingCard>
@@ -193,9 +246,12 @@ const CBC = () => {
           <h3 className="mb-4 text-lg font-semibold">AI Interpretation</h3>
           
           {!result && !loading && (
-            <div className="result-placeholder">
+            <div className="result-placeholder" style={{ padding: '40px 0' }}>
+              <MicroscopeSVG className="w-64 h-64 mb-6" />
               <Activity size={48} opacity={0.3} color="var(--primary-color)" className="mb-4" />
-              <p>Upload a report or input fields to generate hematology insights.</p>
+              <p style={{ marginTop: '16px', maxWidth: '280px', textAlign: 'center' }}>
+                Upload a report or input fields to generate hematology insights.
+              </p>
             </div>
           )}
 

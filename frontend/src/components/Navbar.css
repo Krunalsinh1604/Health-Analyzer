@@ -80,16 +80,7 @@
   box-shadow: var(--glass-shadow);
 }
 
-.badge {
-  position: absolute;
-  top: -2px;
-  right: -2px;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: #EF4444;
-  box-shadow: 0 0 10px rgba(239, 68, 68, 0.6);
-}
+/* Badge removed as it's now handled by Tailwind in JSX */
 
 .avatar-container {
   position: relative;

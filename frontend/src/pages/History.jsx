@@ -85,9 +85,13 @@ const History = () => {
       <div className="history-list">
         <AnimatePresence mode="popLayout">
           {filteredDocs.length === 0 ? (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="no-results">
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }} 
+              animate={{ opacity: 1, y: 0 }} 
+              className="no-results"
+            >
               <div className="placeholder-content">
-                <Clock size={48} opacity={0.2} />
+                <Clock size={64} strokeWidth={1} opacity={0.3} color="var(--primary-color)" />
                 <p>No historical vectors match your current filter.</p>
               </div>
             </motion.div>
@@ -101,7 +105,7 @@ const History = () => {
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ delay: idx * 0.05 }}
               >
-                <FloatingCard className="history-item-card">
+                <FloatingCard className="history-item-card" hover={false}>
                   <div className="item-main">
                     <div className="item-icon-wrapper">
                       {getIcon(doc.type)}
@@ -119,7 +123,6 @@ const History = () => {
                           {doc.type === 'diabetes' ? doc.diabetes_prediction : (doc.prediction || 'Scan Complete')}
                         </span>
                         <div className="item-meta">
-                          <label>System ID:</label>
                           <span>#HT-{doc.id?.toString().padStart(4, '0')}</span>
                         </div>
                       </div>

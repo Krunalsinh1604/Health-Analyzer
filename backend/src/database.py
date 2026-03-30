@@ -97,6 +97,7 @@ def init_db():
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 email VARCHAR(255) UNIQUE NOT NULL,
                 mobile_no VARCHAR(20) UNIQUE NOT NULL,
+                blood_group VARCHAR(5) NOT NULL,
                 password_hash VARCHAR(255) NOT NULL,
                 full_name VARCHAR(255) NOT NULL,
                 role ENUM('user', 'admin') DEFAULT 'user',
@@ -109,6 +110,10 @@ def init_db():
 
         if not _column_exists(cursor, "users", "mobile_no"):
             cursor.execute("ALTER TABLE users ADD COLUMN mobile_no VARCHAR(20) UNIQUE NULL")
+        
+        if not _column_exists(cursor, "users", "blood_group"):
+            cursor.execute("ALTER TABLE users ADD COLUMN blood_group VARCHAR(5) DEFAULT 'O+'")
+            cursor.execute("ALTER TABLE users MODIFY COLUMN blood_group VARCHAR(5) NOT NULL")
 
         cursor.execute(
             """

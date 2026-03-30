@@ -5,12 +5,13 @@ import FloatingCard from '../components/FloatingCard';
 import GlowButton from '../components/GlowButton';
 import FloatingInput from '../components/FloatingInput';
 import AnimatedLoader from '../components/AnimatedLoader';
+import HealthInfoCard from '../components/HealthInfoCard';
+import { PancreasSVG } from '../components/HealthIllustrations';
 import api from '../services/api';
 import { useReports } from '../context/ReportContext';
 import './DiseasePrediction.css';
 
 const iconsMap = {
-  Pregnancies: <User size={18} />,
   Glucose: <Activity size={18} />,
   BloodPressure: <Heart size={18} />,
   SkinThickness: <Droplets size={18} />,
@@ -23,7 +24,7 @@ const iconsMap = {
 const Diabetes = () => {
   const { saveReport } = useReports();
   const [formData, setFormData] = useState({
-    Pregnancies: '', Glucose: '', BloodPressure: '', SkinThickness: '',
+    Glucose: '', BloodPressure: '', SkinThickness: '',
     Insulin: '', BMI: '', DiabetesPedigreeFunction: '', Age: ''
   });
   const [loading, setLoading] = useState(false);
@@ -107,30 +108,114 @@ const Diabetes = () => {
           <h3 className="mb-4 text-lg font-semibold" style={{ marginBottom: '24px' }}>Patient Biometrics</h3>
           <form onSubmit={handlePredict}>
             <div className="form-grid">
-              {Object.keys(formData).map((key) => (
-                <FloatingInput
-                  key={key}
-                  name={key}
-                  label={key.replace(/([A-Z])/g, ' $1').trim()}
-                  type="number"
-                  step="any"
-                  value={formData[key]}
-                  onChange={handleChange}
-                  icon={iconsMap[key]}
-                  required
-                />
-              ))}
+              {Object.keys(formData).map((key) => {
+                const helperText = {
+                  Glucose: "Your blood sugar level. Normal: 70–99 mg/dL fasting",
+                  BloodPressure: "The force of blood against artery walls. Normal: below 120/80 mmHg",
+                  BMI: "Body Mass Index — your weight-to-height ratio. Healthy range: 18.5–24.9",
+                  Age: "Your current age in years",
+                  Insulin: "Hormone regulating blood sugar. Fasting normal: 2–25 µIU/mL",
+                  SkinThickness: "Triceps skin fold measurement. Used to estimate body fat",
+                  DiabetesPedigreeFunction: "Likelihood of diabetes based on family history score"
+                }[key];
+
+                const infoContent = {
+                  Glucose: {
+                    desc: "Concentration of sugar (glucose) in your blood.",
+                    why: "Main indicator of how well your body processes sugar. Persistent high levels define diabetes.",
+                    abnormal: "Fasting levels >126 mg/dL often indicate diabetes.",
+                    link: "https://en.wikipedia.org/wiki/Blood_sugar_level"
+                  },
+                  BloodPressure: {
+                    desc: "Pressure exerted by circulating blood on vessel walls.",
+                    why: "High blood pressure (hypertension) often coexists with diabetes and increases cardiovascular risk.",
+                    abnormal: "Above 140/90 mmHg is clinically concerning.",
+                    link: "https://en.wikipedia.org/wiki/Blood_pressure"
+                  },
+                  BMI: {
+                    desc: "Measure of body fat based on height and weight.",
+                    why: "Higher BMI is a significant risk factor for Type 2 diabetes.",
+                    abnormal: ">30 is considered obese and higher risk.",
+                    link: "https://en.wikipedia.org/wiki/Body_mass_index"
+                  },
+                  Insulin: {
+                    desc: "A hormone made by the pancreas that allows your body to use sugar.",
+                    why: "Low insulin or insulin resistance leads to high blood sugar levels.",
+                    abnormal: "Extremely high/low fasting levels suggest metabolic dysfunction.",
+                    link: "https://en.wikipedia.org/wiki/Insulin"
+                  },
+                  SkinThickness: {
+                    desc: "Thickness of the triceps skin fold.",
+                    why: "Used as a proxy for body fat percentage in clinical datasets.",
+                    abnormal: "Thicker folds correlate with higher body fat.",
+                    link: "https://en.wikipedia.org/wiki/Skinfold_thickness"
+                  },
+                  Age: {
+                    desc: "Patient's chronological age.",
+                    why: "Risk for Type 2 diabetes increases with age, particularly after 45.",
+                    abnormal: "N/A",
+                    link: "https://en.wikipedia.org/wiki/Ageing"
+                  },
+                  DiabetesPedigreeFunction: {
+                    desc: "Function representing the likelihood of diabetes based on family history.",
+                    why: "Genetics play a major role in diabetes predisposition.",
+                    abnormal: "Higher values indicate stronger hereditary links.",
+                    link: "https://en.wikipedia.org/wiki/Medical_genetics"
+                  }
+                }[key];
+
+                return (
+                  <div key={key} className="input-group-enhanced">
+                    <div className="flex items-center gap-1 mb-1">
+                      <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#475569' }}>
+                        {key.replace(/([A-Z])/g, ' $1').trim()}
+                      </label>
+                      <HealthInfoCard 
+                        title={key.replace(/([A-Z])/g, ' $1').trim()}
+                        description={infoContent.desc}
+                        whyItMatters={infoContent.why}
+                        abnormalIndicators={infoContent.abnormal}
+                        learnMoreLink={infoContent.link}
+                      />
+                    </div>
+                    <FloatingInput
+                      name={key}
+                      label=""
+                      type="number"
+                      step="any"
+                      value={formData[key]}
+                      onChange={handleChange}
+                      icon={iconsMap[key]}
+                      required
+                    />
+                    <p style={{ fontSize: '0.75rem', color: '#64748B', marginTop: '4px' }}>{helperText}</p>
+                  </div>
+                );
+              })}
             </div>
-            <div className="form-actions mt-4" style={{ marginTop: '32px' }}>
-              <GlowButton 
-                type="submit" 
-                disabled={!isFormValid || loading} 
-                loading={loading}
-                loadingText="Running Network..."
-                className="w-full"
+            <div className="form-actions mt-6" style={{ marginTop: '32px' }}>
+              <button
+                type="submit"
+                disabled={!isFormValid || loading}
+                className="bg-teal-500 hover:bg-teal-600 text-white font-semibold py-4 px-8 rounded-2xl w-full text-lg shadow-md transition-all duration-200 flex flex-col items-center justify-center gap-1"
+                aria-label="Run AI Health Scan"
               >
-                Run AI Scan
-              </GlowButton>
+                <div className="flex items-center gap-3">
+                  {loading ? (
+                    <>
+                      <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full" />
+                      <span>⏳ Analysing... Please wait</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>🔍 Analyse My Health Data</span>
+                    </>
+                  )}
+                </div>
+              </button>
+              <p className="text-center text-xs text-slate-500 mt-2 italic">
+                *Takes less than 3 seconds — results are for informational purposes only
+              </p>
             </div>
           </form>
         </FloatingCard>
@@ -139,9 +224,12 @@ const Diabetes = () => {
           <h3 className="mb-4 text-lg font-semibold">AI Prediction Result</h3>
           
           {!result && !loading && (
-            <div className="result-placeholder">
+            <div className="result-placeholder" style={{ padding: '40px 0' }}>
+              <PancreasSVG className="w-full h-48 mb-6" />
               <Activity size={48} opacity={0.3} color="var(--primary-color)" />
-              <p>Enter patient vitals and run prediction to view neural analysis results.</p>
+              <p style={{ marginTop: '16px', maxWidth: '280px', textAlign: 'center' }}>
+                Enter patient vitals and run prediction to view neural analysis results.
+              </p>
             </div>
           )}
 

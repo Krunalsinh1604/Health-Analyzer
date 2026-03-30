@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { useAuth } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext'; // Modified: Added AuthProvider
+import { NotificationProvider } from "./context/NotificationContext"; // Added
+import NotificationContainer from "./components/Notifications/NotificationContainer"; // Added
 import Sidebar from './components/Sidebar';
 import Navbar from './components/Navbar';
 import Landing from './pages/Landing';
@@ -14,6 +16,7 @@ import Hypertension from './pages/Hypertension';
 import Profile from './pages/Profile';
 import History from './pages/History';
 import CBC from './pages/CBC';
+import AdminPage from './pages/AdminPage';
 import { ReportProvider } from './context/ReportContext';
 import './App.css';
 
@@ -22,6 +25,15 @@ const ProtectedRoute = ({ children }) => {
   if (loading) return null;
   if (!user) return <Navigate to="/login" replace />;
   return children;
+};
+
+const DashboardRedirect = () => {
+  const { user } = useAuth();
+  // Role-based logic to prevent confusion
+  if (user?.role === 'admin' || user?.is_admin || user?.email?.includes('admin')) {
+    return <Navigate to="/admin" replace />;
+  }
+  return <Dashboard />;
 };
 
 const DashboardLayout = ({ children }) => {
@@ -71,23 +83,27 @@ const DashboardLayout = ({ children }) => {
 
 function App() {
   return (
-    <ReportProvider>
-      <Routes>
-        <Route path="/" element={<Landing />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        
-        <Route path="/dashboard" element={<ProtectedRoute><DashboardLayout><Dashboard /></DashboardLayout></ProtectedRoute>} />
-        <Route path="/diabetes" element={<ProtectedRoute><DashboardLayout><Diabetes /></DashboardLayout></ProtectedRoute>} />
-        <Route path="/heart" element={<ProtectedRoute><DashboardLayout><Heart /></DashboardLayout></ProtectedRoute>} />
-        <Route path="/hypertension" element={<ProtectedRoute><DashboardLayout><Hypertension /></DashboardLayout></ProtectedRoute>} />
-        <Route path="/cbc" element={<ProtectedRoute><DashboardLayout><CBC /></DashboardLayout></ProtectedRoute>} />
-        <Route path="/history" element={<ProtectedRoute><DashboardLayout><History /></DashboardLayout></ProtectedRoute>} />
-        <Route path="/profile" element={<ProtectedRoute><DashboardLayout><Profile /></DashboardLayout></ProtectedRoute>} />
-        
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </ReportProvider>
+    <NotificationProvider>
+      <NotificationContainer />
+      <ReportProvider>
+        <Routes>
+          <Route path="/" element={<Landing />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          
+          <Route path="/dashboard" element={<ProtectedRoute><DashboardLayout><DashboardRedirect /></DashboardLayout></ProtectedRoute>} />
+          <Route path="/diabetes" element={<ProtectedRoute><DashboardLayout><Diabetes /></DashboardLayout></ProtectedRoute>} />
+          <Route path="/heart" element={<ProtectedRoute><DashboardLayout><Heart /></DashboardLayout></ProtectedRoute>} />
+          <Route path="/hypertension" element={<ProtectedRoute><DashboardLayout><Hypertension /></DashboardLayout></ProtectedRoute>} />
+          <Route path="/cbc" element={<ProtectedRoute><DashboardLayout><CBC /></DashboardLayout></ProtectedRoute>} />
+          <Route path="/history" element={<ProtectedRoute><DashboardLayout><History /></DashboardLayout></ProtectedRoute>} />
+          <Route path="/profile" element={<ProtectedRoute><DashboardLayout><Profile /></DashboardLayout></ProtectedRoute>} />
+          <Route path="/admin" element={<ProtectedRoute><DashboardLayout><AdminPage /></DashboardLayout></ProtectedRoute>} />
+          
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </ReportProvider>
+    </NotificationProvider>
   );
 }
 

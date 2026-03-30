@@ -47,12 +47,13 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const register = async (fullName, email, mobileNo, password) => {
+  const register = async (fullName, email, mobileNo, bloodGroup, password) => {
     try {
       const response = await api.post('/register', {
         full_name: fullName,
         email: email,
         mobile_no: mobileNo,
+        blood_group: bloodGroup,
         password: password
       });
       return response.status === 201 || response.status === 200;

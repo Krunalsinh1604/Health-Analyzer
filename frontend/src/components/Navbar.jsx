@@ -1,6 +1,7 @@
 import React from 'react';
 import { Menu, Bell, Search } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import './Navbar.css';
 
 const Navbar = ({ onMenuClick }) => {
@@ -17,15 +18,20 @@ const Navbar = ({ onMenuClick }) => {
       </div>
       
       <div className="nav-right">
-        <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.95 }} className="icon-btn">
+        <motion.button 
+          whileHover={{ scale: 1.1 }} 
+          whileTap={{ scale: 0.95 }} 
+          className="icon-btn relative bg-white/50 border border-gray-200/50 w-10 h-10 rounded-full flex items-center justify-center text-gray-800 cursor-pointer shadow-sm hover:shadow-md transition-all"
+          aria-label="Notifications"
+        >
           <Bell size={20} />
-          <span className="badge"></span>
+          <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white shadow-sm" />
         </motion.button>
         
-        <div className="avatar-container">
+        <Link to="/profile" className="avatar-container">
           <img src="https://i.pravatar.cc/150?u=a042581f4e29026704d" alt="Profile" className="avatar" />
           <div className="avatar-glow"></div>
-        </div>
+        </Link>
       </div>
     </div>
   );

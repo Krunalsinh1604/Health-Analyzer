@@ -1,6 +1,6 @@
 import React from 'react';
 import { Share2, Link2, GitBranch } from 'lucide-react';
-
+import mainLogo from '../assets/logo.png';
 import './Footer.css';
 
 const Footer = () => (
@@ -9,8 +9,7 @@ const Footer = () => (
       {/* Brand */}
       <div className="footer-col brand-col">
         <div className="footer-logo">
-          <div className="logo-glow"><div className="logo-core"></div></div>
-          <span>AntiGrav AI</span>
+          <img src={mainLogo} alt="Health Analyzer" className="footer-logo-img" />
         </div>
         <p className="footer-tagline">Predictive Healthcare,<br />Zero Gravity Workflow.</p>
         <div className="social-links">
@@ -58,7 +57,7 @@ const Footer = () => (
     </div>
 
     <div className="footer-bottom">
-      <span>© 2025 AntiGrav AI. All rights reserved.</span>
+      <span>© 2025 Health Analyzer. All rights reserved.</span>
       <span>Built for the future of medicine.</span>
     </div>
   </footer>

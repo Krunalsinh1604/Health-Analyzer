@@ -3,28 +3,36 @@ import { NavLink } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { LayoutDashboard, Activity, Heart, FileText, Clock, User, X, LogOut } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import mainLogo from '../assets/logo.png';
 import './Sidebar.css';
 
-const navItems = [
-  { path: '/dashboard', name: 'Dashboard', icon: <LayoutDashboard size={20} /> },
-  { path: '/diabetes', name: 'Diabetes', icon: <Activity size={20} /> },
-  { path: '/heart', name: 'Heart', icon: <Heart size={20} /> },
-  { path: '/hypertension', name: 'Hypertension', icon: <Activity size={20} /> },
-  { path: '/cbc', name: 'CBC Analysis', icon: <FileText size={20} /> },
-  { path: '/history', name: 'History', icon: <Clock size={20} /> },
-  { path: '/profile', name: 'Profile', icon: <User size={20} /> },
-];
-
 const Sidebar = ({ onClose }) => {
-  const { logout } = useAuth();
+  const { user, logout } = useAuth();
+
+  let navItems = [
+    { path: '/dashboard', name: 'Dashboard', icon: <LayoutDashboard size={20} /> },
+    { path: '/diabetes', name: 'Diabetes', icon: <Activity size={20} /> },
+    { path: '/heart', name: 'Heart', icon: <Heart size={20} /> },
+    { path: '/hypertension', name: 'Hypertension', icon: <Activity size={20} /> },
+    { path: '/cbc', name: 'CBC Analysis', icon: <FileText size={20} /> },
+    { path: '/history', name: 'History', icon: <Clock size={20} /> },
+    { path: '/profile', name: 'Profile', icon: <User size={20} /> },
+  ];
+
+  const isAdmin = user?.role === 'admin' || user?.is_admin || user?.email?.includes('admin');
+
+  // If admin, only show Admin User and Profile
+  if (isAdmin) {
+    navItems = [
+      { path: '/admin', name: 'Admin User', icon: <LayoutDashboard size={20} /> },
+      { path: '/profile', name: 'Profile', icon: <User size={20} /> },
+    ];
+  }
   
   return (
     <div className="sidebar glass-panel">
       <div className="sidebar-header">
-        <div className="logo-glow">
-          <div className="logo-core"></div>
-        </div>
-        <h2>AntiGrav AI</h2>
+        <img src={mainLogo} alt="Health Analyzer" className="sidebar-logo-img" />
         <button className="mobile-close" onClick={onClose}>
           <X size={24} />
         </button>

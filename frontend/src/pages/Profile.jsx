@@ -1,41 +1,43 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { User, Mail, Shield, Key, Save } from 'lucide-react';
+import { User, Mail, Droplets, Phone } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import FloatingCard from '../components/FloatingCard';
-import GlowButton from '../components/GlowButton';
 import FloatingInput from '../components/FloatingInput';
+import api from '../services/api';
 import './Profile.css';
 
 const Profile = () => {
   const { user } = useAuth();
-  const [isEditing, setIsEditing] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [formData, setFormData] = useState({
-    name: 'Loading...',
-    email: 'Loading...',
-    role: 'Medical Staff',
-    department: 'Cardiology'
+    name: '',
+    email: '',
+    bloodGroup: '',
+    phone: ''
   });
 
-  useEffect(() => {
-    if (user) {
+  const fetchUserDetails = async () => {
+    setIsLoading(true);
+    try {
+      const response = await api.get('/users/me');
+      const data = response.data;
       setFormData({
-        name: user.email || user.username || 'System User',
-        email: user.email || 'user@antigrav.ai',
-        role: user.role || 'Lead Diagnostician',
-        department: 'Neural Analytics'
+        name: data.full_name || 'System User',
+        email: data.email || 'user@healthanalyzer.ai',
+        bloodGroup: data.blood_group || 'O+',
+        phone: data.mobile_no || '+1 234 567 890'
       });
+    } catch (err) {
+      console.error("Failed to fetch user details:", err);
+    } finally {
+      setIsLoading(false);
     }
-  }, [user]);
-
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSave = (e) => {
-    e.preventDefault();
-    setIsEditing(false);
-  };
+  useEffect(() => {
+    fetchUserDetails();
+  }, []);
 
   return (
     <div className="profile-page">
@@ -43,7 +45,7 @@ const Profile = () => {
         <motion.h1 initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
           User Profile
         </motion.h1>
-        <p>Manage your identity and analytical clearances</p>
+        <p>Your clinical profile and Identity parameters</p>
       </header>
 
       <div className="profile-grid">
@@ -54,7 +56,6 @@ const Profile = () => {
           </div>
           <div className="profile-meta">
             <h2>{formData.name}</h2>
-            <p className="role">{formData.role}</p>
             <div className="status-badge">
               <span className="dot"></span> Online
             </div>
@@ -79,24 +80,18 @@ const Profile = () => {
         <FloatingCard delay={0.2} className="details-card">
           <div className="details-header" style={{ marginBottom: '24px' }}>
             <h3>Identity Settings</h3>
-            <GlowButton 
-              variant="outline" 
-              onClick={() => setIsEditing(!isEditing)}
-            >
-              {isEditing ? 'Cancel' : 'Edit Profile'}
-            </GlowButton>
+            <span className="text-xs font-semibold text-slate-400 uppercase tracking-widest">Verified Profile</span>
           </div>
 
-          <form onSubmit={handleSave} className="profile-form">
+          <div className="profile-form">
             <div className="form-grid">
               <FloatingInput
                 name="name"
                 label="Full Name / Username"
                 value={formData.name}
-                onChange={handleChange}
                 icon={<User size={18} />}
-                disabled={!isEditing}
-                style={{ opacity: isEditing ? 1 : 0.7 }}
+                readOnly
+                style={{ opacity: 0.9 }}
               />
 
               <FloatingInput
@@ -104,46 +99,30 @@ const Profile = () => {
                 type="email"
                 label="Email Address"
                 value={formData.email}
-                onChange={handleChange}
                 icon={<Mail size={18} />}
-                disabled={!isEditing}
-                style={{ opacity: isEditing ? 1 : 0.7 }}
+                readOnly
+                style={{ opacity: 0.9 }}
               />
 
               <FloatingInput
-                name="role"
-                label="Access Role"
-                value={formData.role}
-                onChange={handleChange}
-                icon={<Shield size={18} />}
-                disabled={!isEditing}
-                style={{ opacity: isEditing ? 1 : 0.7 }}
+                name="bloodGroup"
+                label="Blood Group"
+                value={formData.bloodGroup}
+                icon={<Droplets size={18} />}
+                readOnly
+                style={{ opacity: 0.9 }}
               />
 
               <FloatingInput
-                name="department"
-                label="Department"
-                value={formData.department}
-                onChange={handleChange}
-                icon={<Key size={18} />}
-                disabled={!isEditing}
-                style={{ opacity: isEditing ? 1 : 0.7 }}
+                name="phone"
+                label="Mobile No"
+                value={formData.phone}
+                icon={<Phone size={18} />}
+                readOnly
+                style={{ opacity: 0.9 }}
               />
             </div>
-
-            {isEditing && (
-              <motion.div 
-                initial={{ opacity: 0, y: 10 }} 
-                animate={{ opacity: 1, y: 0 }}
-                className="form-actions"
-                style={{ marginTop: '32px' }}
-              >
-                <GlowButton type="submit" icon={<Save size={18} />} className="w-full">
-                  Save Changes
-                </GlowButton>
-              </motion.div>
-            )}
-          </form>
+          </div>
         </FloatingCard>
       </div>
     </div>

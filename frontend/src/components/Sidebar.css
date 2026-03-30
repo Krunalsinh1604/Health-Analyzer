@@ -13,6 +13,12 @@
   margin-bottom: 40px;
 }
 
+.sidebar-logo-img {
+  height: 64px;
+  width: auto;
+  object-fit: contain;
+}
+
 .logo-glow {
   width: 32px;
   height: 32px;

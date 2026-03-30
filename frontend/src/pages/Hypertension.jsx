@@ -5,6 +5,8 @@ import FloatingCard from '../components/FloatingCard';
 import GlowButton from '../components/GlowButton';
 import FloatingInput from '../components/FloatingInput';
 import AnimatedLoader from '../components/AnimatedLoader';
+import HealthInfoCard from '../components/HealthInfoCard';
+import { BloodVesselSVG } from '../components/HealthIllustrations';
 import api from '../services/api';
 import { useReports } from '../context/ReportContext';
 import './DiseasePrediction.css';
@@ -107,30 +109,79 @@ const Hypertension = () => {
           <h3 className="mb-4 text-lg font-semibold" style={{ marginBottom: '24px' }}>Patient Readings</h3>
           <form onSubmit={handlePredict}>
             <div className="form-grid">
-              {Object.keys(formData).map((key) => (
-                <FloatingInput
-                  key={key}
-                  name={key}
-                  label={key.replace(/_/g, ' ').toUpperCase()}
-                  type="number"
-                  step="any"
-                  value={formData[key]}
-                  onChange={handleChange}
-                  icon={iconsMap[key]}
-                  required
-                />
-              ))}
+              {Object.keys(formData).map((key) => {
+                const helperText = {
+                  age: "Your current age in years",
+                  sex: "Biological sex (0 = Female, 1 = Male) — affects risk calculations",
+                  bmi: "Body Mass Index — your weight-to-height ratio. Healthy range: 18.5–24.9",
+                  heart_rate: "Beats per minute. Resting normal: 60–100 bpm",
+                  activity_level: "Physical activity level (1-4). 1: Sedentary, 4: Very Active",
+                  smoker: "Current smoking status — significantly increases hypertension risk",
+                  family_history: "Whether a close relative has hypertension or heart disease"
+                }[key];
+
+                const infoContent = {
+                  age: { desc: "Chronological age.", why: "Blood vessels naturally stiffen with age, increasing blood pressure risk.", abnormal: "N/A", link: "https://en.wikipedia.org/wiki/Hypertension" },
+                  sex: { desc: "Biological sex.", why: "Men are often diagnosed earlier; women's risk rises after menopause.", abnormal: "N/A", link: "https://en.wikipedia.org/wiki/Sex_differences_in_medicine" },
+                  bmi: { desc: "Body Mass Index.", why: "Excess weight increases the strain on your heart and vessels.", abnormal: ">25 is overweight, >30 is obese.", link: "https://en.wikipedia.org/wiki/Body_mass_index" },
+                  heart_rate: { desc: "Resting heart rate in beats per minute.", why: "A high resting heart rate can be a sign of cardiovascular stress.", abnormal: ">100 bpm is considered tachycardia.", link: "https://en.wikipedia.org/wiki/Heart_rate" },
+                  activity_level: { desc: "Frequency of physical exercise.", why: "Regular activity keeps arteries flexible and reduces blood pressure.", abnormal: "Score of 1 (Sedentary) is a high-risk factor.", link: "https://en.wikipedia.org/wiki/Sedentary_lifestyle" },
+                  smoker: { desc: "Current smoking status (0: No, 1: Yes).", why: "Nicotine narrows blood vessels and damages arterial walls.", abnormal: "1 (Yes) significantly increases stroke risk.", link: "https://en.wikipedia.org/wiki/Smoking_and_cardiovascular_disease" },
+                  family_history: { desc: "Genetic predisposition (0: No, 1: Yes).", why: "Hypertension often has a strong hereditary component.", abnormal: "N/A", link: "https://en.wikipedia.org/wiki/Medical_genetics" }
+                }[key];
+
+                return (
+                  <div key={key} className="input-group-enhanced">
+                    <div className="flex items-center gap-1 mb-1">
+                      <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#475569' }}>
+                        {key.replace(/_/g, ' ').toUpperCase()}
+                      </label>
+                      <HealthInfoCard 
+                        title={key.replace(/_/g, ' ').toUpperCase()}
+                        description={infoContent.desc}
+                        whyItMatters={infoContent.why}
+                        abnormalIndicators={infoContent.abnormal}
+                        learnMoreLink={infoContent.link}
+                      />
+                    </div>
+                    <FloatingInput
+                      name={key}
+                      label=""
+                      type="number"
+                      step="any"
+                      value={formData[key]}
+                      onChange={handleChange}
+                      icon={iconsMap[key]}
+                      required
+                    />
+                    <p style={{ fontSize: '0.75rem', color: '#64748B', marginTop: '4px' }}>{helperText}</p>
+                  </div>
+                );
+              })}
             </div>
-            <div className="form-actions mt-4" style={{ marginTop: '32px' }}>
-              <GlowButton 
-                type="submit" 
-                disabled={!isFormValid || loading} 
-                loading={loading}
-                loadingText="Processing Vector Scan..."
-                className="w-full"
+            <div className="form-actions mt-6" style={{ marginTop: '32px' }}>
+              <button
+                type="submit"
+                disabled={!isFormValid || loading}
+                className="bg-teal-500 hover:bg-teal-600 text-white font-semibold py-4 px-8 rounded-2xl w-full text-lg shadow-md transition-all duration-200 flex flex-col items-center justify-center gap-1"
+                aria-label="Run Hypertension Scan"
               >
-                Run AI Scan
-              </GlowButton>
+                <div className="flex items-center gap-3">
+                  {loading ? (
+                    <>
+                      <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full" />
+                      <span>⏳ Analysing... Please wait</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>🔍 Analyse My Health Data</span>
+                    </>
+                  )}
+                </div>
+              </button>
+              <p className="text-center text-xs text-slate-500 mt-2 italic">
+                *Takes less than 3 seconds — results are for informational purposes only
+              </p>
             </div>
           </form>
         </FloatingCard>
@@ -139,9 +190,12 @@ const Hypertension = () => {
           <h3 className="mb-4 text-lg font-semibold">AI Scan Result</h3>
           
           {!result && !loading && (
-            <div className="result-placeholder">
+            <div className="result-placeholder" style={{ padding: '40px 0' }}>
+              <BloodVesselSVG className="w-full h-32 mb-6" />
               <Activity size={48} opacity={0.3} color="var(--primary-color)" className="mb-4" />
-              <p>Inject data points to process the hypertension probability vector.</p>
+              <p style={{ marginTop: '16px', maxWidth: '280px', textAlign: 'center' }}>
+                Inject data points to process the hypertension probability vector.
+              </p>
             </div>
           )}
 
