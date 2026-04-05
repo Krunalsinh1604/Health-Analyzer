@@ -28,6 +28,8 @@ class User(BaseModel):
     email: str
     full_name: str
     role: str
+    blood_group: str
+    mobile_no: str
 
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)

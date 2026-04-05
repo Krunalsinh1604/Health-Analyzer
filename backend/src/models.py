@@ -12,6 +12,7 @@ class User(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     email = Column(String(255), unique=True, nullable=False)
     mobile_no = Column(String(20), unique=True, nullable=False)
+    blood_group = Column(String(5), nullable=False)
     password_hash = Column(String(255), nullable=False)
     full_name = Column(String(255), nullable=False)
     role = Column(Enum('user', 'admin'), default='user')

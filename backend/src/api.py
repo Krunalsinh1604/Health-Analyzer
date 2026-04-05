@@ -10,7 +10,7 @@ from datetime import timedelta
 from datetime import datetime
 import random
 import re
-import smtplib
+# import smtplib
 # from email.message import EmailMessage
 
 # ---------------- IMPORT INTERNAL MODULES ----------------
@@ -29,6 +29,41 @@ from src.conditions import identify_conditions
 from src.recommendation import recommend_specialist
 from src.pdf_service import extract_parameters_from_pdf, extract_cbc_from_file
 from src.cbc_analysis import interpret_cbc
+from src.ml_trainer import train_and_test_csv
+
+from src.database import SessionLocal
+from src.models import User as DBUser
+from contextlib import asynccontextmanager
+
+def create_default_admin():
+    db = SessionLocal()
+    try:
+        admin = db.query(DBUser).filter(DBUser.email == "admin@gmail.com").first()
+        if not admin:
+            hashed_password = get_password_hash("Admin@123")
+            new_admin = DBUser(
+                email="admin@gmail.com",
+                mobile_no="0000000000",
+                blood_group="O+",
+                password_hash=hashed_password,
+                full_name="System Admin",
+                role="admin"
+            )
+            db.add(new_admin)
+            db.commit()
+            print("✅ Default admin user created successfully.")
+        else:
+            print("ℹ️ Default admin user already exists. Skipping creation.")
+    except Exception as e:
+        db.rollback()
+        print(f"❌ Error creating default admin user: {e}")
+    finally:
+        db.close()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    create_default_admin()
+    yield
 
 # ---------------- INITIALIZE DATABASE ----------------
 
@@ -39,7 +74,8 @@ init_db()
 app = FastAPI(
     title="Health Analyzer API",
     description="AI-powered Healthcare Analytics & Decision Support System",
-    version="2.0"
+    version="2.0",
+    lifespan=lifespan
 )
 
 # ---------------- CORS ----------------
@@ -82,6 +118,7 @@ class PatientData(BaseModel):
 class UserCreate(BaseModel):
     email: str
     mobile_no: str
+    blood_group: str
     password: str
     full_name: str
 
@@ -143,10 +180,10 @@ async def register(user: UserCreate):
 
     cursor.execute(
         """
-        INSERT INTO users (email, mobile_no, password_hash, full_name, role)
-        VALUES (%s, %s, %s, %s, 'user')
+        INSERT INTO users (email, mobile_no, blood_group, password_hash, full_name, role)
+        VALUES (%s, %s, %s, %s, %s, 'user')
         """,
-        (email, mobile_no, hashed_password, user.full_name)
+        (email, mobile_no, user.blood_group, hashed_password, user.full_name)
     )
     conn.commit()
     user_id = cursor.lastrowid
@@ -328,6 +365,52 @@ async def read_users_me(current_user=Depends(get_current_user)):
             cursor.close()
         if 'conn' in locals():
             conn.close()
+
+class UserUpdate(BaseModel):
+    full_name: Optional[str] = None
+    blood_group: Optional[str] = None
+    mobile_no: Optional[str] = None
+
+@app.put("/users/me", response_model=User)
+async def update_user_me(user_update: UserUpdate, current_user=Depends(get_current_user)):
+    conn = get_db_connection()
+    if not conn:
+        raise HTTPException(status_code=500, detail="Database connection failed")
+    
+    try:
+        cursor = conn.cursor(dictionary=True)
+        # Build update query dynamically
+        update_data = user_update.dict(exclude_unset=True)
+        if not update_data:
+            raise HTTPException(status_code=400, detail="No fields provided for update")
+        
+        # Normalize mobile if present
+        if "mobile_no" in update_data:
+            update_data["mobile_no"] = _normalize_mobile(update_data["mobile_no"])
+            if not _is_valid_mobile(update_data["mobile_no"]):
+                raise HTTPException(status_code=400, detail="Invalid mobile number format")
+
+        columns = ", ".join([f"{k} = %s" for k in update_data.keys()])
+        values = list(update_data.values())
+        values.append(current_user.user_id)
+        
+        query = f"UPDATE users SET {columns} WHERE id = %s"
+        cursor.execute(query, tuple(values))
+        conn.commit()
+        
+        # Get updated user
+        cursor.execute("SELECT * FROM users WHERE id = %s", (current_user.user_id,))
+        updated_user = cursor.fetchone()
+        return updated_user
+        
+    except Exception as e:
+        print(f"Error updating user: {e}")
+        if "Duplicate entry" in str(e):
+            raise HTTPException(status_code=400, detail="Mobile number already registered by another user")
+        raise HTTPException(status_code=500, detail=str(e))
+    finally:
+        cursor.close()
+        conn.close()
 
 # ---------------- PREDICTION ----------------
 
@@ -716,6 +799,28 @@ async def upload_report(file: UploadFile = File(...)):
 
     extracted = extract_parameters_from_pdf(file_path)
     return {"extracted_parameters": extracted}
+
+# ---------------- CUSTOM ML TRAINING ----------------
+
+@app.post("/ml/train-custom")
+async def train_custom_ml(file: UploadFile = File(...)):
+    """
+    Accepts a CSV file and placeholder for training results.
+    """
+    if not file.filename.endswith('.csv'):
+        raise HTTPException(status_code=400, detail="Only CSV files are supported.")
+    
+    try:
+        content = await file.read()
+        results = train_and_test_csv(content)
+        
+        if "error" in results:
+            raise HTTPException(status_code=400, detail=results["error"])
+            
+        return results
+    except Exception as e:
+        print(f"Error in custom ML training: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 # ---------------- CBC UPLOAD ----------------
 

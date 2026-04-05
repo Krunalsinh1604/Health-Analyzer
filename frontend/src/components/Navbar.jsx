@@ -1,66 +1,49 @@
-import { NavLink, useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
-import "../pages/Dashboard.css";
+import React from 'react';
+import { Menu, Bell, Search, UserCircle } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+import './Navbar.css';
 
-function Navbar() {
-    const { user, logout } = useAuth();
-    const navigate = useNavigate();
+const Navbar = ({ onMenuClick }) => {
+  const { user } = useAuth();
 
-    const handleLogout = () => {
-        if (window.confirm("Terminate clinical session?")) {
-            logout();
-            navigate("/login");
-        }
-    };
-
-    return (
-        <nav className="db-nav">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ width: 36, height: 36, background: 'var(--btn-gradient)', borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 20 }}>🧬</div>
-            <span style={{ fontSize: 20, fontWeight: 700, color: 'var(--db-text)', letterSpacing: '-0.02em' }}>HealthAnalyzer<span style={{color: 'var(--db-accent)'}}>.ai</span></span>
-          </div>
-          
-          <div className="db-nav-links">
-            <NavLink to="/dashboard" className={({ isActive }) => `db-nav-item ${isActive ? "active" : ""}`}>
-                Home
-            </NavLink>
-            {user?.role !== "admin" && (
-                <>
-                    <NavLink to="/diabetes" className={({ isActive }) => `db-nav-item ${isActive ? "active" : ""}`}>
-                        Diabetes
-                    </NavLink>
-                    <NavLink to="/heart-disease" className={({ isActive }) => `db-nav-item ${isActive ? "active" : ""}`}>
-                        Heart Disease
-                    </NavLink>
-                    <NavLink to="/hypertension" className={({ isActive }) => `db-nav-item ${isActive ? "active" : ""}`}>
-                        Hypertension
-                    </NavLink>
-                    <NavLink to="/cbc" className={({ isActive }) => `db-nav-item ${isActive ? "active" : ""}`}>
-                        Report Analyzer
-                    </NavLink>
-                    <NavLink to="/history" className={({ isActive }) => `db-nav-item ${isActive ? "active" : ""}`}>
-                        History
-                    </NavLink>
-                </>
-            )}
-            {user?.role === "admin" && (
-                <NavLink to="/admin" className={({ isActive }) => `db-nav-item ${isActive ? "active" : ""}`}>
-                    Doctor Dashboard
-                </NavLink>
-            )}
-          </div>
-
-          {user && (
-            <div className="db-profile" onClick={handleLogout} title="Click to logout">
-              <div className="db-profile-info">
-                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--db-text)' }}>{user.full_name || 'Practitioner'}</div>
-                <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--db-accent)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Session Active</div>
-              </div>
-              <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--db-teal-soft)', border: '1px solid var(--db-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>👩‍⚕️</div>
-            </div>
-          )}
-        </nav>
-    );
-}
+  return (
+    <div className="navbar glass-panel">
+      <div className="nav-left">
+        <button className="menu-btn" onClick={onMenuClick}>
+          <Menu size={24} />
+        </button>
+        <div className="search-bar">
+          <Search size={18} className="search-icon" />
+          <input type="text" placeholder="Access records, patients, models..." />
+        </div>
+      </div>
+      
+      <div className="nav-right">
+        <motion.button 
+          whileHover={{ scale: 1.1 }} 
+          whileTap={{ scale: 0.95 }} 
+          className="icon-btn relative bg-white/50 border border-gray-200/50 w-10 h-10 rounded-full flex items-center justify-center text-gray-800 cursor-pointer shadow-sm hover:shadow-md transition-all"
+          aria-label="Notifications"
+        >
+          <Bell size={20} />
+          <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white shadow-sm" />
+        </motion.button>
+        
+        {user ? (
+          <Link to="/profile" className="avatar-container">
+            <img src={`https://i.pravatar.cc/150?u=${user.email}`} alt="Profile" className="avatar" />
+            <div className="avatar-glow"></div>
+          </Link>
+        ) : (
+          <Link to="/login" className="avatar-container guest-avatar" title="Login to save reports">
+            <UserCircle size={32} color="#64748b" />
+          </Link>
+        )}
+      </div>
+    </div>
+  );
+};
 
 export default Navbar;
