@@ -76,9 +76,13 @@ def train_and_test_csv(csv_content: bytes):
         
         # Add a few example predictions
         sample_indices = np.random.choice(len(X_test), min(5, len(X_test)), replace=False)
-        metrics["sample_predictions"] = [
-            {"actual": int(y_test[i]), "predicted": int(y_pred[i])} for i in sample_indices
-        ]
+        metrics["sample_predictions"] = []
+        for i in sample_indices:
+            actual_val = y_test.iloc[i] if hasattr(y_test, 'iloc') else y_test[i]
+            metrics["sample_predictions"].append({
+                "actual": int(actual_val),
+                "predicted": int(y_pred[i])
+            })
         
         return metrics
         
