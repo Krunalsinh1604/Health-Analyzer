@@ -1,7 +1,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { LayoutDashboard, Activity, Heart, FileText, Clock, User, X, LogOut } from 'lucide-react';
+import { LayoutDashboard, Activity, Heart, FileText, Clock, User, X, LogOut, Cpu } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import mainLogo from '../assets/logo.png';
 import './Sidebar.css';
@@ -17,15 +17,21 @@ const Sidebar = ({ onClose }) => {
     { path: '/cbc', name: 'CBC Analysis', icon: <FileText size={20} /> },
     { path: '/history', name: 'History', icon: <Clock size={20} /> },
     { path: '/profile', name: 'Profile', icon: <User size={20} /> },
+    { path: '/ml-studio', name: 'ML Studio', icon: <Cpu size={20} /> },
   ];
 
   const isAdmin = user?.role === 'admin' || user?.is_admin || user?.email?.includes('admin');
 
-  // If admin, only show Admin User and Profile
-  if (isAdmin) {
+  // Logic for Guest vs Auth vs Admin
+  if (!user) {
+    navItems = [
+      { path: '/ml-studio', name: 'ML Studio', icon: <Cpu size={20} /> },
+    ];
+  } else if (isAdmin) {
     navItems = [
       { path: '/admin', name: 'Admin User', icon: <LayoutDashboard size={20} /> },
       { path: '/profile', name: 'Profile', icon: <User size={20} /> },
+      { path: '/ml-studio', name: 'ML Studio', icon: <Cpu size={20} /> },
     ];
   }
   
@@ -66,10 +72,17 @@ const Sidebar = ({ onClose }) => {
       </nav>
 
       <div className="sidebar-footer">
-        <div className="nav-link logout-btn" onClick={logout} style={{cursor: 'pointer', marginTop: '16px'}}>
-          <span className="nav-icon"><LogOut size={20} /></span>
-          <span className="nav-name">Sign Out</span>
-        </div>
+        {user ? (
+          <div className="nav-link logout-btn" onClick={logout} style={{cursor: 'pointer', marginTop: '16px'}}>
+            <span className="nav-icon"><LogOut size={20} /></span>
+            <span className="nav-name">Sign Out</span>
+          </div>
+        ) : (
+          <NavLink to="/login" className="nav-link login-btn-sidebar" onClick={onClose} style={{marginTop: '16px'}}>
+            <span className="nav-icon"><LogOut size={20} style={{transform: 'rotate(180deg)'}} /></span>
+            <span className="nav-name">Sign In</span>
+          </NavLink>
+        )}
       </div>
     </div>
   );

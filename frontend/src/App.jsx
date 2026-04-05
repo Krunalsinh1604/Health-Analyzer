@@ -17,6 +17,7 @@ import Profile from './pages/Profile';
 import History from './pages/History';
 import CBC from './pages/CBC';
 import AdminPage from './pages/AdminPage';
+import MLStudio from './pages/MLStudio';
 import { ReportProvider } from './context/ReportContext';
 import './App.css';
 
@@ -99,6 +100,7 @@ function App() {
           <Route path="/history" element={<ProtectedRoute><DashboardLayout><History /></DashboardLayout></ProtectedRoute>} />
           <Route path="/profile" element={<ProtectedRoute><DashboardLayout><Profile /></DashboardLayout></ProtectedRoute>} />
           <Route path="/admin" element={<ProtectedRoute><DashboardLayout><AdminPage /></DashboardLayout></ProtectedRoute>} />
+          <Route path="/ml-studio" element={<DashboardLayout><MLStudio /></DashboardLayout>} />
           
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>

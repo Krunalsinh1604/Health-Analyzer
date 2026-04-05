@@ -10,7 +10,7 @@ from datetime import timedelta
 from datetime import datetime
 import random
 import re
-import smtplib
+# import smtplib
 # from email.message import EmailMessage
 
 # ---------------- IMPORT INTERNAL MODULES ----------------
@@ -29,6 +29,7 @@ from src.conditions import identify_conditions
 from src.recommendation import recommend_specialist
 from src.pdf_service import extract_parameters_from_pdf, extract_cbc_from_file
 from src.cbc_analysis import interpret_cbc
+from src.ml_trainer import train_and_test_csv
 
 from src.database import SessionLocal
 from src.models import User as DBUser
@@ -798,6 +799,28 @@ async def upload_report(file: UploadFile = File(...)):
 
     extracted = extract_parameters_from_pdf(file_path)
     return {"extracted_parameters": extracted}
+
+# ---------------- CUSTOM ML TRAINING ----------------
+
+@app.post("/ml/train-custom")
+async def train_custom_ml(file: UploadFile = File(...)):
+    """
+    Accepts a CSV file and placeholder for training results.
+    """
+    if not file.filename.endswith('.csv'):
+        raise HTTPException(status_code=400, detail="Only CSV files are supported.")
+    
+    try:
+        content = await file.read()
+        results = train_and_test_csv(content)
+        
+        if "error" in results:
+            raise HTTPException(status_code=400, detail=results["error"])
+            
+        return results
+    except Exception as e:
+        print(f"Error in custom ML training: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 # ---------------- CBC UPLOAD ----------------
 

@@ -52,7 +52,13 @@ export const ReportProvider = ({ children }) => {
   }, []);
 
   useEffect(() => {
-    fetchAllHistory();
+    const token = localStorage.getItem('token');
+    if (token) {
+      fetchAllHistory();
+    } else {
+      setLoading(false);
+      setReports([]);
+    }
   }, [fetchAllHistory]);
 
   const saveReport = async (type, payload) => {

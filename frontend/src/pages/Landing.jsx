@@ -14,6 +14,7 @@ import heartHands from '../assets/heart_hands.png';
 import heartEcg from '../assets/heart_ecg.png';
 import medicalCross from '../assets/medical_cross.png';
 import mainLogo from '../assets/logo.png';
+import { mlService } from '../services/mlService';
 import './Landing.css';
 
 // --- ANIMATED COUNTER HOOK ---
@@ -69,6 +70,10 @@ const Landing = () => {
   const impactRef = useRef(null);
   const impactInView = useInView(impactRef, { once: true });
 
+  const handleDemoPredict = () => {
+    navigate('/ml-studio');
+  };
+
   return (
     <div className="landing-page">
       <div className="bg-particles"></div>
@@ -81,6 +86,7 @@ const Landing = () => {
         <div className="nav-links">
           <a href="#features">Features</a>
           <a href="#how-it-works">How It Works</a>
+          <span onClick={() => navigate('/ml-studio')} style={{cursor: 'pointer', color: 'var(--text-muted)', fontWeight: 500}}>Machine Learning</span>
           <a href="#testimonials">Testimonials</a>
         </div>
         <div className="nav-actions">
@@ -316,7 +322,39 @@ const Landing = () => {
         </div>
       </Section>
 
-      {/* ── CTA ── */}
+      <Section className="section demo-section" id="demo">
+        <div className="section-header">
+          <p className="section-badge">Neural Intelligence</p>
+          <h2>Advanced Machine Learning Studio</h2>
+          <p className="section-sub">Experience the power of custom clinical models with our high-fidelity training environment.</p>
+        </div>
+        
+        <div className="demo-container glass-panel">
+          <div className="demo-promo-grid">
+            <div className="promo-text">
+              <h3>Supervised Learning Demo</h3>
+              <p>Upload clinical datasets in CSV format to train, test, and evaluate custom diagnostic models. Visualize accuracy, precision, and recall metrics in real-time.</p>
+              <div className="promo-features">
+                <div className="p-feat"><CheckCircle size={16} /> Random Forest Architecture</div>
+                <div className="p-feat"><CheckCircle size={16} /> Automated Preprocessing</div>
+                <div className="p-feat"><CheckCircle size={16} /> Real-time Performance Metrics</div>
+              </div>
+              <GlowButton onClick={() => navigate('/ml-studio')} className="promo-btn">
+                Launch ML Studio <ArrowRight size={18} />
+              </GlowButton>
+            </div>
+            <div className="promo-visual">
+              <div className="neural-abstract">
+                <div className="n-circle c1"></div>
+                <div className="n-circle c2"></div>
+                <div className="n-circle c3"></div>
+                <Cpu size={80} className="n-icon" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </Section>
+
       <Section className="section cta-section">
         <div className="cta-inner glass-panel">
           <motion.div

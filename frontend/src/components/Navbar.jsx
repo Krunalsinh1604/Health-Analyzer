@@ -1,10 +1,13 @@
 import React from 'react';
-import { Menu, Bell, Search } from 'lucide-react';
+import { Menu, Bell, Search, UserCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
 import './Navbar.css';
 
 const Navbar = ({ onMenuClick }) => {
+  const { user } = useAuth();
+
   return (
     <div className="navbar glass-panel">
       <div className="nav-left">
@@ -28,10 +31,16 @@ const Navbar = ({ onMenuClick }) => {
           <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-white shadow-sm" />
         </motion.button>
         
-        <Link to="/profile" className="avatar-container">
-          <img src="https://i.pravatar.cc/150?u=a042581f4e29026704d" alt="Profile" className="avatar" />
-          <div className="avatar-glow"></div>
-        </Link>
+        {user ? (
+          <Link to="/profile" className="avatar-container">
+            <img src={`https://i.pravatar.cc/150?u=${user.email}`} alt="Profile" className="avatar" />
+            <div className="avatar-glow"></div>
+          </Link>
+        ) : (
+          <Link to="/login" className="avatar-container guest-avatar" title="Login to save reports">
+            <UserCircle size={32} color="#64748b" />
+          </Link>
+        )}
       </div>
     </div>
   );
